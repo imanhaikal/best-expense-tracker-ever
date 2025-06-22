@@ -1,5 +1,49 @@
 // Expense Tracker Application
 
+// Currency Formatting Utility
+const currencyFormatter = {
+    formatters: {
+        USD: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
+        EUR: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }),
+        GBP: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }),
+        JPY: new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }),
+        MYR: new Intl.NumberFormat('ms-MY', { style: 'currency', currency: 'MYR' })
+    },
+    
+    format(amount, currency = null) {
+        // Default to the selected currency or USD if none selected
+        const selectedCurrency = currency || 
+                                 document.getElementById('currency-setting')?.value || 
+                                 localStorage.getItem('selectedCurrency') || 
+                                 'USD';
+        
+        return this.formatters[selectedCurrency].format(amount);
+    },
+    
+    getCurrencySymbol(currency = null) {
+        const selectedCurrency = currency || 
+                               document.getElementById('currency-setting')?.value || 
+                               localStorage.getItem('selectedCurrency') || 
+                               'USD';
+                               
+        const symbols = {
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'JPY': '¥',
+            'MYR': 'RM'
+        };
+        
+        return symbols[selectedCurrency] || '$';
+    },
+    
+    getSelectedCurrency() {
+        return document.getElementById('currency-setting')?.value || 
+               localStorage.getItem('selectedCurrency') || 
+               'USD';
+    }
+};
+
 // Data Storage Utilities
 const db = {
     // In-memory storage before implementing actual database
@@ -211,7 +255,7 @@ const ui = {
                 if (account.id !== fromAccountId) {
                     const option = document.createElement('option');
                     option.value = account.id;
-                    option.textContent = `${account.name} ($${account.balance.toFixed(2)})`;
+                    option.textContent = `${account.name} (${currencyFormatter.format(account.balance)})`;
                     toAccountSelect.appendChild(option);
                 }
             });
@@ -230,10 +274,17 @@ const ui = {
             btn.disabled = true;
 
             setTimeout(() => {
+                // Save the selected currency to localStorage
+                const selectedCurrency = document.getElementById('currency-setting').value;
+                localStorage.setItem('selectedCurrency', selectedCurrency);
+                
                 // Here you would normally save the settings to a backend
                 ui.showToast('Settings saved successfully!', 'success');
                 btn.textContent = originalText;
                 btn.disabled = false;
+                
+                // Update UI with the new currency
+                ui.renderDashboard();
             }, 1000);
         });
 
@@ -266,6 +317,12 @@ const ui = {
             if (this.elements.themeSwitch) {
                 this.elements.themeSwitch.checked = true;
             }
+        }
+        
+        // Set the saved currency
+        const savedCurrency = localStorage.getItem('selectedCurrency');
+        if (savedCurrency && document.getElementById('currency-setting')) {
+            document.getElementById('currency-setting').value = savedCurrency;
         }
     },
 
@@ -351,7 +408,7 @@ const ui = {
                         <i class="fas ${account.icon}"></i>
                     </div>
                 </div>
-                <div class="account-balance">$${account.balance.toFixed(2)}</div>
+                <div class="account-balance">${currencyFormatter.format(account.balance)}</div>
                 <div class="account-type">${account.type.charAt(0).toUpperCase() + account.type.slice(1)}</div>
                 <div class="account-actions">
                     <button class="btn btn-secondary btn-sm" onclick="accountsManager.editAccount('${account.id}')">
@@ -477,7 +534,7 @@ const ui = {
                 <td>${category?.name || 'Uncategorized'}</td>
                 <td>${account?.name || 'Unknown Account'}</td>
                 <td class="${transaction.type === 'income' ? 'text-success' : 'text-danger'}">
-                    ${transaction.type === 'income' ? '+' : '-'}$${Math.abs(transaction.amount).toFixed(2)}
+                    ${transaction.type === 'income' ? '+' : '-'}${currencyFormatter.format(Math.abs(transaction.amount)).replace('-', '')}
                 </td>
             `;
             
@@ -495,7 +552,7 @@ const ui = {
         const totalBalance = db.accounts.reduce((sum, account) => sum + account.balance, 0);
         const totalBalanceElement = document.getElementById('total-balance');
         if (totalBalanceElement) {
-            totalBalanceElement.textContent = `$${totalBalance.toFixed(2)}`;
+            totalBalanceElement.textContent = currencyFormatter.format(totalBalance);
         }
         
         // Update monthly income
@@ -511,7 +568,7 @@ const ui = {
             
         const monthlyIncomeElement = document.getElementById('monthly-income');
         if (monthlyIncomeElement) {
-            monthlyIncomeElement.textContent = `$${monthlyIncome.toFixed(2)}`;
+            monthlyIncomeElement.textContent = currencyFormatter.format(monthlyIncome);
         }
         
         // Update monthly expenses
@@ -524,7 +581,7 @@ const ui = {
             
         const monthlyExpensesElement = document.getElementById('monthly-expenses');
         if (monthlyExpensesElement) {
-            monthlyExpensesElement.textContent = `$${monthlyExpenses.toFixed(2)}`;
+            monthlyExpensesElement.textContent = currencyFormatter.format(monthlyExpenses);
         }
         
         // Update spending chart
@@ -603,7 +660,7 @@ const ui = {
                                 const value = context.parsed || 0;
                                 const percentage = totalExpenses ? 
                                     Math.round((value / totalExpenses) * 100) : 0;
-                                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                                return `${label}: ${currencyFormatter.format(value)} (${percentage}%)`;
                             }
                         }
                     }
@@ -614,7 +671,7 @@ const ui = {
         // Update center text
         const centerTextTotal = document.getElementById('spending-chart-total');
         if (centerTextTotal) {
-            centerTextTotal.textContent = `$${totalExpenses.toFixed(2)}`;
+            centerTextTotal.textContent = currencyFormatter.format(totalExpenses);
         }
     },
     
@@ -696,12 +753,12 @@ const ui = {
         db.accounts.forEach(account => {
             const option1 = document.createElement('option');
             option1.value = account.id;
-            option1.textContent = `${account.name} ($${account.balance.toFixed(2)})`;
+            option1.textContent = `${account.name} (${currencyFormatter.format(account.balance)})`;
             fromAccountSelect.appendChild(option1);
 
             const option2 = document.createElement('option');
             option2.value = account.id;
-            option2.textContent = `${account.name} ($${account.balance.toFixed(2)})`;
+            option2.textContent = `${account.name} (${currencyFormatter.format(account.balance)})`;
             toAccountSelect.appendChild(option2);
         });
         
@@ -1229,7 +1286,7 @@ const recurringManager = {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${item.payee}</td>
-                <td>$${item.amount.toFixed(2)}</td>
+                <td>${currencyFormatter.format(item.amount)}</td>
                 <td>${item.frequency.charAt(0).toUpperCase() + item.frequency.slice(1)}</td>
                 <td>${new Date(item.nextDate).toLocaleDateString()}</td>
                 <td>${account ? account.name : 'N/A'}</td>
@@ -1423,7 +1480,7 @@ const budgetManager = {
             item.innerHTML = `
                 <div class="budget-item-info">
                     <p><strong>${category.name}</strong></p>
-                    <p>$${spent.toFixed(2)} spent of $${budget.amount.toFixed(2)}</p>
+                    <p>${currencyFormatter.format(spent)} spent of ${currencyFormatter.format(budget.amount)}</p>
                 </div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" style="width: ${Math.min(progress, 100)}%;"></div>
@@ -1577,7 +1634,7 @@ const reportsManager = {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value;
+                                return currencyFormatter.getCurrencySymbol() + value;
                             }
                         }
                     }
