@@ -209,15 +209,15 @@
 
 *These issues make the application feel unprofessional, jarring, and difficult to use.*
 
-- [ ] **Replace Native Browser Alerts (alert()):** The site heavily relies on `localhost:8000 says...` alerts for feedback. This is poor practice.
+- [x] **Replace Native Browser Alerts (alert()):** The site heavily relies on `localhost:8000 says...` alerts for feedback. This is poor practice.
     - **Examples:** "Transaction added successfully" (0:38), "Edit Account... will be implemented soon" (0:49), "Cannot delete Default Account..." (0:53), etc.
     - **Required Fix:** Implement a consistent, modern, in-app notification system. "Toast" or "Snackbar" popups are standard for success/error messages. For "coming soon" features, the button should either be disabled with a tooltip or removed.
 
-- [ ] **Improve Deletion/Reassignment Flow:** The app prevents deleting accounts and categories with transactions but offers a poor user experience.
+- [x] **Improve Deletion/Reassignment Flow:** The app prevents deleting accounts and categories with transactions but offers a poor user experience.
     - **Issue (0:53 & 1:48):** The alert just says "Please delete/reassign the transactions first." It forces the user to manually go find and edit every single transaction, which is tedious and error-prone.
     - **Required Fix:** When a user tries to delete a category/account with transactions, the confirmation modal should offer a solution, such as: "This category has 5 transactions. Please select a new category to reassign them to before deleting." followed by a dropdown of other valid categories.
 
-- [ ] **Prevent Invalid User Actions:** The UI allows users to get into obvious error states.
+- [x] **Prevent Invalid User Actions:** The UI allows users to get into obvious error states.
     - **Issue (1:01):** On the "Transfer Money" modal, the user can select the same account for both "From" and "To".
     - **Required Fix:** The "To Account" dropdown list should automatically exclude the account selected in the "From Account" dropdown.
 
@@ -229,7 +229,7 @@
 
 *These are smaller issues that detract from the overall quality and polish of the application.*
 
-- [ ] **Inconsistent Confirmation Dialogs:** The application uses different methods for confirming deletion.
+- [x] **Inconsistent Confirmation Dialogs:** The application uses different methods for confirming deletion.
     - **Issue (2:32):** Deleting a recurring transaction uses a native browser `confirm()` box ("Are you sure..."), while other actions use `alert()`.
     - **Required Fix:** Use a single, consistently styled, in-app modal for all critical confirmations (e.g., "Delete Item?").
 

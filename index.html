@@ -371,6 +371,9 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- Transfer Money Modal -->
     <div class="modal-backdrop" id="transfer-modal-backdrop">
         <div class="modal-container">
@@ -518,6 +521,23 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancel-recurring-btn">Cancel</button>
                 <button type="submit" class="btn btn-primary" form="recurring-form">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-backdrop" id="confirmation-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirmation-modal-title">Are you sure?</h3>
+                <button class="modal-close" id="close-confirmation-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-modal-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-confirmation-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-confirmation-btn">Confirm</button>
             </div>
         </div>
     </div>

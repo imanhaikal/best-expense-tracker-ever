@@ -98,7 +98,10 @@ const ui = {
         recurringForm: document.getElementById('recurring-form'),
         recurringTransactionsList: document.getElementById('recurring-transactions-list'),
         transactionTypeSelect: document.getElementById('transaction-type'),
-        recurringTypeSelect: document.getElementById('recurring-type')
+        recurringTypeSelect: document.getElementById('recurring-type'),
+        toastContainer: document.getElementById('toast-container'),
+        confirmationModalBackdrop: document.getElementById('confirmation-modal-backdrop'),
+        transferFromAccountSelect: document.getElementById('transfer-from-account')
     },
 
     initialize() {
@@ -189,6 +192,28 @@ const ui = {
 
         this.elements.recurringTypeSelect?.addEventListener('change', (e) => {
             this.populateCategorySelect(document.getElementById('recurring-category'), e.target.value);
+        });
+
+        // Add event listener for transfer from account change
+        this.elements.transferFromAccountSelect?.addEventListener('change', (e) => {
+            const fromAccountId = e.target.value;
+            const toAccountSelect = document.getElementById('transfer-to-account');
+            const currentToId = toAccountSelect.value;
+            
+            toAccountSelect.innerHTML = '';
+            db.accounts.forEach(account => {
+                if (account.id !== fromAccountId) {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = `${account.name} ($${account.balance.toFixed(2)})`;
+                    toAccountSelect.appendChild(option);
+                }
+            });
+
+            // If the previously selected 'to' account is still valid, re-select it
+            if (currentToId && currentToId !== fromAccountId) {
+                toAccountSelect.value = currentToId;
+            }
         });
     },
 
@@ -559,7 +584,7 @@ const ui = {
         const notes = form.querySelector('#transaction-notes').value;
         
         if (!amount || !date || !payee || !categoryId || !accountId) {
-            alert('Please fill in all required fields');
+            ui.showToast('Please fill in all required fields', 'error');
             return;
         }
         
@@ -598,7 +623,7 @@ const ui = {
         this.renderDashboard();
         
         // Show success message
-        alert('Transaction added successfully!');
+        ui.showToast('Transaction added successfully!', 'success');
 
         // Go back to dashboard
         this.changePage('dashboard');
@@ -613,6 +638,11 @@ const ui = {
         fromAccountSelect.innerHTML = '';
         toAccountSelect.innerHTML = '';
 
+        if (db.accounts.length < 2) {
+            ui.showToast('You need at least two accounts to make a transfer.', 'error');
+            return;
+        }
+
         db.accounts.forEach(account => {
             const option1 = document.createElement('option');
             option1.value = account.id;
@@ -625,6 +655,9 @@ const ui = {
             toAccountSelect.appendChild(option2);
         });
         
+        // Trigger change event to filter 'To' account list initially
+        this.elements.transferFromAccountSelect.dispatchEvent(new Event('change'));
+
         // Set date to today
         document.getElementById('transfer-date').valueAsDate = new Date();
 
@@ -645,18 +678,18 @@ const ui = {
         const notes = document.getElementById('transfer-notes').value;
 
         if (fromAccountId === toAccountId) {
-            alert("From and To accounts cannot be the same.");
+            ui.showToast("From and To accounts cannot be the same.", 'error');
             return;
         }
 
         if (!amount || amount <= 0) {
-            alert("Please enter a valid amount.");
+            ui.showToast("Please enter a valid amount.", 'error');
             return;
         }
 
         const fromAccount = db.accounts.find(acc => acc.id === fromAccountId);
         if (fromAccount.balance < amount) {
-            alert("Insufficient funds in the 'From' account.");
+            ui.showToast("Insufficient funds in the 'From' account.", 'error');
             return;
         }
 
@@ -694,7 +727,7 @@ const ui = {
         db.save();
         this.renderDashboard();
         this.hideTransferModal();
-        alert('Transfer successful!');
+        ui.showToast('Transfer successful!', 'success');
     },
 
     populateCategorySelect(selectElement, type) {
@@ -720,6 +753,60 @@ const ui = {
         group.label = type.charAt(0).toUpperCase() + type.slice(1);
         renderCategoryOptions(filteredCategories, 0, group);
         selectElement.appendChild(group);
+    },
+
+    showToast(message, type = 'info') {
+        if (!this.elements.toastContainer) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-times-circle',
+            info: 'fa-info-circle'
+        };
+        const icon = icons[type] || 'fa-info-circle';
+
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="fas ${icon}"></i></div>
+            <div class="toast-message">${message}</div>
+        `;
+
+        this.elements.toastContainer.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add('show'), 100);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
+    },
+
+    showConfirmation(message, onConfirm) {
+        if (!this.elements.confirmationModalBackdrop) return;
+
+        const modal = this.elements.confirmationModalBackdrop;
+        modal.querySelector('#confirmation-modal-message').textContent = message;
+        modal.classList.add('active');
+
+        const confirmBtn = modal.querySelector('#confirm-confirmation-btn');
+        const cancelBtn = modal.querySelector('#cancel-confirmation-btn');
+        const closeBtn = modal.querySelector('#close-confirmation-modal');
+
+        const hide = () => modal.classList.remove('active');
+
+        // Use .cloneNode(true) to remove old event listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        newConfirmBtn.addEventListener('click', () => {
+            onConfirm();
+            hide();
+        });
+
+        cancelBtn.addEventListener('click', hide);
+        closeBtn.addEventListener('click', hide);
     }
 };
 
@@ -727,7 +814,7 @@ const ui = {
 const accountsManager = {
     showAddAccountModal() {
         // Implement modal for adding accounts
-        alert("Add Account functionality will be implemented soon!");
+        ui.showToast("Add Account functionality will be implemented soon!", 'info');
     },
     
     editAccount(accountId) {
@@ -735,7 +822,7 @@ const accountsManager = {
         if (!account) return;
         
         // Implement edit account functionality
-        alert(`Edit Account functionality for ${account.name} will be implemented soon!`);
+        ui.showToast(`Edit Account for ${account.name} coming soon!`, 'info');
     },
     
     deleteAccount(accountId) {
@@ -746,22 +833,16 @@ const accountsManager = {
         const hasTransactions = db.transactions.some(t => t.accountId === accountId);
         
         if (hasTransactions) {
-            alert(`Cannot delete ${account.name} because it has transactions. Please delete the transactions first or transfer them to another account.`);
+            ui.showToast(`Cannot delete ${account.name} because it has transactions.`, 'error');
             return;
         }
         
-        if (confirm(`Are you sure you want to delete ${account.name}?`)) {
-            // Remove account from array
+        ui.showConfirmation(`Are you sure you want to delete ${account.name}? This action cannot be undone.`, () => {
             db.accounts = db.accounts.filter(acc => acc.id !== accountId);
-            
-            // Save to local storage
             db.save();
-            
-            // Update UI
             ui.renderDashboard();
-            
-            alert('Account deleted successfully!');
-        }
+            ui.showToast('Account deleted successfully!', 'success');
+        });
     },
 
     updateBalance(accountId, amount) {
@@ -853,7 +934,7 @@ const categoriesManager = {
         // Check if it has sub-categories
         const hasSubCategories = db.categories.some(c => c.parentId === categoryId);
         if (hasSubCategories) {
-            alert('This category has sub-categories. Please delete or reassign them first.');
+            ui.showToast('This category has sub-categories. Please delete or reassign them first.', 'error');
             return;
         }
 
@@ -861,22 +942,16 @@ const categoriesManager = {
         const hasTransactions = db.transactions.some(t => t.categoryId === categoryId);
         
         if (hasTransactions) {
-            alert(`Cannot delete ${category.name} because it has transactions. Please reassign those transactions first.`);
+            ui.showToast(`Cannot delete ${category.name} because it has transactions.`, 'error');
             return;
         }
         
-        if (confirm(`Are you sure you want to delete ${category.name}?`)) {
-            // Remove category from array
+        ui.showConfirmation(`Are you sure you want to delete ${category.name}?`, () => {
             db.categories = db.categories.filter(cat => cat.id !== categoryId);
-            
-            // Save to local storage
             db.save();
-            
-            // Update UI
             ui.renderDashboard();
-            
-            alert('Category deleted successfully!');
-        }
+            ui.showToast('Category deleted successfully!', 'success');
+        });
     },
 
     handleCategorySubmit() {
@@ -888,7 +963,7 @@ const categoriesManager = {
         const color = document.getElementById('category-color').value;
 
         if (!name) {
-            alert('Category name is required.');
+            ui.showToast('Category name is required.', 'error');
             return;
         }
 
@@ -914,6 +989,7 @@ const categoriesManager = {
         db.save();
         ui.renderDashboard();
         this.hideCategoryModal();
+        ui.showToast(id ? 'Category updated!' : 'Category created!', 'success');
     }
 };
 
@@ -980,11 +1056,12 @@ const recurringManager = {
     },
 
     deleteRecurring(id) {
-        if (confirm('Are you sure you want to delete this recurring transaction?')) {
+        ui.showConfirmation('Are you sure you want to delete this recurring transaction?', () => {
             db.recurring = db.recurring.filter(r => r.id !== id);
             db.save();
             this.renderRecurringList();
-        }
+            ui.showToast('Recurring transaction deleted.', 'success');
+        });
     },
 
     hideRecurringModal() {
@@ -1020,6 +1097,7 @@ const recurringManager = {
         db.save();
         this.renderRecurringList();
         this.hideRecurringModal();
+        ui.showToast(id ? 'Recurring transaction updated!' : 'Recurring transaction saved!', 'success');
     },
 
     populateSelect(elementId, items) {
