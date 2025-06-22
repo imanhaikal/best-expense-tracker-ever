@@ -241,9 +241,9 @@
 
 *These are features that are clearly planned but not yet functional.*
 
-- [ ] **Accounts Page Functionality:**
-    - [ ] Implement "Edit Account".
-    - [ ] Implement "Add Account".
+- [x] **Accounts Page Functionality:**
+    - [x] Implement "Edit Account".
+    - [x] Implement "Add Account".
 
 - [ ] **Budgets Page Functionality:**
     - [ ] The "Add New Budget" form is incomplete. The category dropdown is empty and saving doesn't work.

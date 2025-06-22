@@ -103,7 +103,11 @@ const ui = {
         confirmationModalBackdrop: document.getElementById('confirmation-modal-backdrop'),
         transferFromAccountSelect: document.getElementById('transfer-from-account'),
         reassignModalBackdrop: document.getElementById('reassign-modal-backdrop'),
-        saveSettingsBtn: document.querySelector('#settings-page button')
+        saveSettingsBtn: document.querySelector('#settings-page button'),
+        accountModalBackdrop: document.getElementById('account-modal-backdrop'),
+        accountForm: document.getElementById('account-form'),
+        budgetForm: document.getElementById('budget-form'),
+        budgetList: document.getElementById('budget-list')
     },
 
     initialize() {
@@ -232,6 +236,27 @@ const ui = {
                 btn.disabled = false;
             }, 1000);
         });
+
+        // Account Modal Listeners
+        this.elements.accountModalBackdrop?.addEventListener('click', (e) => {
+            if (e.target === this.elements.accountModalBackdrop) {
+                accountsManager.hideAccountModal();
+            }
+        });
+        this.elements.accountForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            accountsManager.handleAccountSubmit();
+        });
+        const closeAccountModalBtn = this.elements.accountModalBackdrop?.querySelector('#close-account-modal');
+        closeAccountModalBtn?.addEventListener('click', () => accountsManager.hideAccountModal());
+        const cancelAccountBtn = this.elements.accountModalBackdrop?.querySelector('#cancel-account-btn');
+        cancelAccountBtn?.addEventListener('click', () => accountsManager.hideAccountModal());
+
+        // Budget Form
+        this.elements.budgetForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            budgetsManager.handleBudgetSubmit();
+        });
     },
 
     setupTheme() {
@@ -258,6 +283,10 @@ const ui = {
 
         if (pageId === 'recurring') {
             recurringManager.renderRecurringList();
+        }
+
+        if (pageId === 'budgets') {
+            budgetsManager.initialize();
         }
 
         // Update navigation
@@ -909,15 +938,76 @@ const ui = {
 // Accounts Manager
 const accountsManager = {
     showAddAccountModal() {
-        // Implement modal for adding accounts
-        ui.showToast("Add Account functionality will be implemented soon!", 'info');
+        const modal = ui.elements.accountModalBackdrop;
+        if (!modal) return;
+        
+        modal.querySelector('#account-modal-title').textContent = 'Add Account';
+        ui.elements.accountForm.reset();
+        modal.querySelector('#account-id').value = '';
+        modal.querySelector('#account-balance').disabled = false;
+        
+        modal.classList.add('active');
+    },
+
+    hideAccountModal() {
+        const modal = ui.elements.accountModalBackdrop;
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    },
+
+    handleAccountSubmit() {
+        const form = ui.elements.accountForm;
+        if(!ui.validateForm(form)) return;
+
+        const id = form.querySelector('#account-id').value;
+        const name = form.querySelector('#account-name').value;
+        const type = form.querySelector('#account-type').value;
+        const balance = parseFloat(form.querySelector('#account-balance').value);
+        const icon = form.querySelector('#account-icon').value || 'fa-wallet';
+
+        if (id) { // Editing
+            const account = db.accounts.find(a => a.id === id);
+            account.name = name;
+            account.type = type;
+            account.icon = icon;
+            // Balance editing is handled separately to maintain integrity
+        } else { // Creating
+            db.accounts.push({
+                id: 'acc_' + Date.now(),
+                name,
+                type,
+                balance,
+                icon
+            });
+        }
+        db.save();
+        ui.renderDashboard();
+        this.hideAccountModal();
+        ui.showToast(id ? 'Account updated!' : 'Account created!', 'success');
     },
     
     editAccount(accountId) {
         const account = db.accounts.find(acc => acc.id === accountId);
         if (!account) return;
         
-        ui.showToast(`Edit Account for ${account.name} coming soon!`, 'info');
+        const modal = ui.elements.accountModalBackdrop;
+        if (!modal) return;
+
+        modal.querySelector('#account-modal-title').textContent = 'Edit Account';
+        ui.elements.accountForm.reset();
+        
+        modal.querySelector('#account-id').value = account.id;
+        modal.querySelector('#account-name').value = account.name;
+        modal.querySelector('#account-type').value = account.type;
+        modal.querySelector('#account-icon').value = account.icon;
+        
+        // Disable starting balance editing
+        const balanceInput = modal.querySelector('#account-balance');
+        balanceInput.value = account.balance;
+        balanceInput.disabled = true;
+
+        modal.classList.add('active');
     },
     
     deleteAccount(accountId) {
@@ -1271,6 +1361,88 @@ const recurringManager = {
             item.nextDate = new Date(nextDate).toISOString().split('T')[0];
         });
         db.save();
+    }
+};
+
+const budgetsManager = {
+    initialize() {
+        this.renderBudgetList();
+        this.populateCategorySelect();
+    },
+
+    populateCategorySelect() {
+        const select = document.getElementById('budget-category');
+        if (!select) return;
+        select.innerHTML = '';
+        
+        const expenseCategories = db.categories.filter(c => c.type === 'expense' && !db.budgets.some(b => b.categoryId === c.id));
+        
+        expenseCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            select.appendChild(option);
+        });
+    },
+
+    renderBudgetList() {
+        const list = ui.elements.budgetList;
+        if (!list) return;
+        list.innerHTML = '';
+
+        db.budgets.forEach(budget => {
+            const category = db.categories.find(c => c.id === budget.categoryId);
+            const spent = this.calculateSpent(budget.categoryId);
+            const progress = (spent / budget.amount) * 100;
+            const progressClass = progress > 100 ? 'danger' : progress > 80 ? 'warning' : 'good';
+
+            const budgetEl = document.createElement('div');
+            budgetEl.className = 'budget-progress';
+            budgetEl.innerHTML = `
+                <div class="category-name">${category ? category.name : 'N/A'}</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar ${progressClass}" style="width: ${Math.min(progress, 100)}%;"></div>
+                </div>
+                <div class="progress-details">
+                    <span>$${spent.toFixed(2)} of $${budget.amount.toFixed(2)}</span>
+                    <span class="budget-amount">${(budget.amount - spent).toFixed(2)} ${progress > 100 ? 'over' : 'left'}</span>
+                </div>
+            `;
+            list.appendChild(budgetEl);
+        });
+    },
+
+    calculateSpent(categoryId) {
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        return db.transactions
+            .filter(t => t.categoryId === categoryId && 
+                           t.type === 'expense' &&
+                           new Date(t.date).getMonth() === currentMonth &&
+                           new Date(t.date).getFullYear() === currentYear)
+            .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    },
+
+    handleBudgetSubmit() {
+        const form = ui.elements.budgetForm;
+        const categoryId = form.querySelector('#budget-category').value;
+        const amount = parseFloat(form.querySelector('#budget-amount').value);
+
+        if (!categoryId || !amount || amount <= 0) {
+            ui.showToast('Please select a category and enter a valid amount.', 'error');
+            return;
+        }
+
+        db.budgets.push({
+            categoryId,
+            amount
+        });
+
+        db.save();
+        this.initialize();
+        form.reset();
+        ui.showToast('Budget saved successfully!', 'success');
     }
 };
 
