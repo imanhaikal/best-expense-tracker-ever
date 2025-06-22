@@ -233,7 +233,7 @@
     - **Issue (2:32):** Deleting a recurring transaction uses a native browser `confirm()` box ("Are you sure..."), while other actions use `alert()`.
     - **Required Fix:** Use a single, consistently styled, in-app modal for all critical confirmations (e.g., "Delete Item?").
 
-- [ ] **Validation Message Style Inconsistency:** The app has one good example of validation that should be used everywhere else.
+- [x] **Validation Message Style Inconsistency:** The app has one good example of validation that should be used everywhere else.
     - **Good Example (2:00):** On the "Budgets" page, the "Please select an item in the list" message is a well-styled, non-blocking, inline notification.
     - **Required Fix:** All form validation should follow this "good" model instead of relying on native browser alerts.
 
@@ -245,11 +245,11 @@
     - [x] Implement "Edit Account".
     - [x] Implement "Add Account".
 
-- [ ] **Budgets Page Functionality:**
-    - [ ] The "Add New Budget" form is incomplete. The category dropdown is empty and saving doesn't work.
+- [x] **Budgets Page Functionality:**
+    - [x] The "Add New Budget" form is incomplete. The category dropdown is empty and saving doesn't work.
 
-- [ ] **Reports Page:**
-    - [ ] The entire page is a placeholder. "Income vs. Expenses" report needs to be built.
+- [x] **Reports Page:**
+    - [x] The entire page is a placeholder. "Income vs. Expenses" report needs to be built.
 
-- [ ] **Categories Page Functionality:**
-    - [ ] The ability to add/edit category icons and colors needs to be fully implemented and saved correctly. 
+- [x] **Categories Page Functionality:**
+    - [x] The ability to add/edit category icons and colors needs to be fully implemented and saved correctly. 

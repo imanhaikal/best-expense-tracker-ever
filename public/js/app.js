@@ -255,7 +255,7 @@ const ui = {
         // Budget Form
         this.elements.budgetForm?.addEventListener('submit', (e) => {
             e.preventDefault();
-            budgetsManager.handleBudgetSubmit();
+            budgetManager.handleBudgetSubmit();
         });
     },
 
@@ -281,12 +281,13 @@ const ui = {
             currentPage.classList.add('active');
         }
 
-        if (pageId === 'recurring') {
-            recurringManager.renderRecurringList();
-        }
-
+        if (pageId === 'recurring') recurringManager.renderRecurringList();
         if (pageId === 'budgets') {
-            budgetsManager.initialize();
+            budgetManager.renderBudgetList();
+            budgetManager.populateCategorySelect();
+        }
+        if (pageId === 'reports') {
+            reportsManager.renderIncomeExpenseChart();
         }
 
         // Update navigation
@@ -619,8 +620,11 @@ const ui = {
     
     handleTransactionSubmit() {
         const form = this.elements.transactionForm;
-        if (!form) return;
-        
+        if (!this.validateForm(form)) {
+            this.showToast('Please fix the errors on the form.', 'error');
+            return;
+        }
+
         const type = form.querySelector('#transaction-type').value;
         const amount = parseFloat(form.querySelector('#transaction-amount').value);
         const date = form.querySelector('#transaction-date').value;
@@ -630,7 +634,7 @@ const ui = {
         const notes = form.querySelector('#transaction-notes').value;
         
         if (!amount || !date || !payee || !categoryId || !accountId) {
-            ui.showToast('Please fill in all required fields', 'error');
+            this.showToast('Please fill in all required fields', 'error');
             return;
         }
         
@@ -669,7 +673,7 @@ const ui = {
         this.renderDashboard();
         
         // Show success message
-        ui.showToast('Transaction added successfully!', 'success');
+        this.showToast('Transaction added successfully!', 'success');
 
         // Go back to dashboard
         this.changePage('dashboard');
@@ -685,7 +689,7 @@ const ui = {
         toAccountSelect.innerHTML = '';
 
         if (db.accounts.length < 2) {
-            ui.showToast('You need at least two accounts to make a transfer.', 'error');
+            this.showToast('You need at least two accounts to make a transfer.', 'error');
             return;
         }
 
@@ -718,24 +722,31 @@ const ui = {
 
     handleTransferSubmit() {
         const form = this.elements.transferForm;
-        if (!ui.validateForm(form)) {
+        if (!this.validateForm(form)) {
+            this.showToast('Please fix the errors on the form.', 'error');
             return;
         }
 
-        const fromAccountId = document.getElementById('transfer-from-account').value;
-        const toAccountId = document.getElementById('transfer-to-account').value;
-        const amount = parseFloat(document.getElementById('transfer-amount').value);
-        const date = document.getElementById('transfer-date').value;
-        const notes = document.getElementById('transfer-notes').value;
+        const fromAccountId = form.querySelector('#transfer-from-account').value;
+        const toAccountId = form.querySelector('#transfer-to-account').value;
+        const amount = parseFloat(form.querySelector('#transfer-amount').value);
+        const date = form.querySelector('#transfer-date').value;
+        const notes = form.querySelector('#transfer-notes').value;
 
         if (fromAccountId === toAccountId) {
-            ui.showToast("From and To accounts cannot be the same.", 'error');
+            this.showToast('From and To accounts cannot be the same.', 'error');
+            const fromGroup = form.querySelector('#transfer-from-account').closest('.form-group');
+            const toGroup = form.querySelector('#transfer-to-account').closest('.form-group');
+            fromGroup.classList.add('error');
+            toGroup.classList.add('error');
+            fromGroup.querySelector('.error-message').textContent = 'Cannot be the same as To account.';
+            toGroup.querySelector('.error-message').textContent = 'Cannot be the same as From account.';
             return;
         }
 
         const fromAccount = db.accounts.find(acc => acc.id === fromAccountId);
         if (fromAccount.balance < amount) {
-            ui.showToast("Insufficient funds in the 'From' account.", 'error');
+            this.showToast("Insufficient funds in the 'From' account.", 'error');
             return;
         }
 
@@ -773,7 +784,7 @@ const ui = {
         db.save();
         this.renderDashboard();
         this.hideTransferModal();
-        ui.showToast('Transfer successful!', 'success');
+        this.showToast('Transfer successful!', 'success');
     },
 
     populateCategorySelect(selectElement, type) {
@@ -882,7 +893,7 @@ const ui = {
         });
 
         if (items.length === 0) {
-            ui.showToast(`Cannot delete ${item.name}. No other ${itemType} available for reassignment.`, 'error');
+            this.showToast(`Cannot delete ${item.name}. No other ${itemType} available for reassignment.`, 'error');
             return;
         }
 
@@ -907,27 +918,29 @@ const ui = {
         closeBtn.addEventListener('click', hide);
     },
 
-    validateForm(form) {
+    validateForm(form, customErrors = {}) {
         let isValid = true;
-        const fields = form.querySelectorAll('[required]');
-
         // Clear previous errors
-        form.querySelectorAll('.form-group.has-error').forEach(group => {
-            group.classList.remove('has-error');
+        form.querySelectorAll('.form-group').forEach(fg => {
+            fg.classList.remove('error');
+            const errorDiv = fg.querySelector('.error-message');
+            if (errorDiv) errorDiv.textContent = '';
         });
 
-        fields.forEach(field => {
-            const group = field.closest('.form-group');
+        const requiredFields = form.querySelectorAll('[required]');
+
+        requiredFields.forEach(field => {
             if (!field.value.trim()) {
                 isValid = false;
-                group.classList.add('has-error');
-                group.querySelector('.error-message').textContent = 'This field is required.';
-            }
-
-            if (field.type === 'number' && field.value && parseFloat(field.value) <= 0) {
-                isValid = false;
-                group.classList.add('has-error');
-                group.querySelector('.error-message').textContent = 'Please enter a positive value.';
+                const formGroup = field.closest('.form-group');
+                if (formGroup) {
+                    formGroup.classList.add('error');
+                    const errorDiv = formGroup.querySelector('.error-message');
+                    if (errorDiv) {
+                        const fieldName = field.name || field.id;
+                        errorDiv.textContent = customErrors[fieldName] || 'This field is required.';
+                    }
+                }
             }
         });
 
@@ -1161,12 +1174,18 @@ const categoriesManager = {
     },
 
     handleCategorySubmit() {
-        const id = document.getElementById('category-id').value;
-        const name = document.getElementById('category-name').value;
-        const type = document.getElementById('category-type').value;
-        const parentId = document.getElementById('category-parent').value || null;
-        const icon = document.getElementById('category-icon').value || 'fa-tag';
-        const color = document.getElementById('category-color').value;
+        const form = ui.elements.categoryForm;
+        if (!ui.validateForm(form)) {
+            ui.showToast('Please fix the errors on the form.', 'error');
+            return;
+        }
+
+        const id = form.querySelector('#category-id').value;
+        const name = form.querySelector('#category-name').value;
+        const type = form.querySelector('#category-type').value;
+        const parentId = form.querySelector('#category-parent').value || null;
+        const icon = form.querySelector('#category-icon').value || 'fa-tag';
+        const color = form.querySelector('#category-color').value;
 
         if (!name) {
             ui.showToast('Category name is required.', 'error');
@@ -1278,17 +1297,23 @@ const recurringManager = {
     },
 
     handleRecurringSubmit() {
-        const id = document.getElementById('recurring-id').value;
+        const form = ui.elements.recurringForm;
+        if (!ui.validateForm(form)) {
+            ui.showToast('Please fix the errors on the form.', 'error');
+            return;
+        }
+        
+        const id = form.querySelector('#recurring-id').value;
         const recurringData = {
-            type: document.getElementById('recurring-type').value,
-            amount: parseFloat(document.getElementById('recurring-amount').value),
-            payee: document.getElementById('recurring-payee').value,
-            categoryId: document.getElementById('recurring-category').value,
-            accountId: document.getElementById('recurring-account').value,
-            frequency: document.getElementById('recurring-frequency').value,
-            startDate: document.getElementById('recurring-start-date').value,
-            notes: document.getElementById('recurring-notes').value,
-            nextDate: document.getElementById('recurring-start-date').value,
+            type: form.querySelector('#recurring-type').value,
+            amount: parseFloat(form.querySelector('#recurring-amount').value),
+            payee: form.querySelector('#recurring-payee').value,
+            categoryId: form.querySelector('#recurring-category').value,
+            accountId: form.querySelector('#recurring-account').value,
+            frequency: form.querySelector('#recurring-frequency').value,
+            startDate: form.querySelector('#recurring-start-date').value,
+            notes: form.querySelector('#recurring-notes').value,
+            nextDate: form.querySelector('#recurring-start-date').value,
             lastProcessedDate: null
         };
 
@@ -1364,85 +1389,201 @@ const recurringManager = {
     }
 };
 
-const budgetsManager = {
+const budgetManager = {
     initialize() {
+        ui.elements.budgetForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleBudgetSubmit();
+        });
         this.renderBudgetList();
-        this.populateCategorySelect();
     },
 
     populateCategorySelect() {
         const select = document.getElementById('budget-category');
         if (!select) return;
-        select.innerHTML = '';
-        
-        const expenseCategories = db.categories.filter(c => c.type === 'expense' && !db.budgets.some(b => b.categoryId === c.id));
-        
-        expenseCategories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            select.appendChild(option);
-        });
+
+        select.innerHTML = '<option value="">Select a category</option>';
+        ui.populateCategorySelect(select, 'expense'); // Budgets are typically for expenses
     },
 
     renderBudgetList() {
         const list = ui.elements.budgetList;
         if (!list) return;
-        list.innerHTML = '';
 
+        list.innerHTML = '';
         db.budgets.forEach(budget => {
             const category = db.categories.find(c => c.id === budget.categoryId);
+            if (!category) return;
+
             const spent = this.calculateSpent(budget.categoryId);
             const progress = (spent / budget.amount) * 100;
-            const progressClass = progress > 100 ? 'danger' : progress > 80 ? 'warning' : 'good';
 
-            const budgetEl = document.createElement('div');
-            budgetEl.className = 'budget-progress';
-            budgetEl.innerHTML = `
-                <div class="category-name">${category ? category.name : 'N/A'}</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar ${progressClass}" style="width: ${Math.min(progress, 100)}%;"></div>
+            const item = document.createElement('div');
+            item.className = 'budget-item';
+            item.innerHTML = `
+                <div class="budget-item-info">
+                    <p><strong>${category.name}</strong></p>
+                    <p>$${spent.toFixed(2)} spent of $${budget.amount.toFixed(2)}</p>
                 </div>
-                <div class="progress-details">
-                    <span>$${spent.toFixed(2)} of $${budget.amount.toFixed(2)}</span>
-                    <span class="budget-amount">${(budget.amount - spent).toFixed(2)} ${progress > 100 ? 'over' : 'left'}</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${Math.min(progress, 100)}%;"></div>
+                </div>
+                <div class="budget-item-actions">
+                    <button class="icon-btn" onclick="budgetManager.editBudget('${budget.id}')"><i class="fas fa-edit"></i></button>
+                    <button class="icon-btn" onclick="budgetManager.deleteBudget('${budget.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             `;
-            list.appendChild(budgetEl);
+            list.appendChild(item);
         });
     },
 
     calculateSpent(categoryId) {
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-
         return db.transactions
-            .filter(t => t.categoryId === categoryId && 
-                           t.type === 'expense' &&
-                           new Date(t.date).getMonth() === currentMonth &&
-                           new Date(t.date).getFullYear() === currentYear)
-            .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            .filter(t => t.categoryId === categoryId && t.type === 'expense')
+            .reduce((sum, t) => sum + t.amount, 0);
     },
 
     handleBudgetSubmit() {
         const form = ui.elements.budgetForm;
         const categoryId = form.querySelector('#budget-category').value;
         const amount = parseFloat(form.querySelector('#budget-amount').value);
+        const id = form.querySelector('#budget-id').value;
 
-        if (!categoryId || !amount || amount <= 0) {
-            ui.showToast('Please select a category and enter a valid amount.', 'error');
+        if (!categoryId || !amount) {
+            ui.showToast('Please fill in all fields.', 'error');
             return;
         }
 
-        db.budgets.push({
-            categoryId,
-            amount
+        if (id) { // Editing
+            const budget = db.budgets.find(b => b.id === id);
+            budget.categoryId = categoryId;
+            budget.amount = amount;
+        } else { // Adding
+            db.budgets.push({
+                id: 'bud_' + Date.now(),
+                categoryId,
+                amount
+            });
+        }
+        
+        db.save();
+        this.renderBudgetList();
+        form.reset();
+        form.querySelector('#budget-id').value = '';
+        ui.showToast('Budget saved!', 'success');
+    },
+
+    editBudget(id) {
+        const budget = db.budgets.find(b => b.id === id);
+        const form = ui.elements.budgetForm;
+        form.querySelector('#budget-id').value = budget.id;
+        form.querySelector('#budget-category').value = budget.categoryId;
+        form.querySelector('#budget-amount').value = budget.amount;
+        form.querySelector('button[type="submit"]').textContent = 'Update Budget';
+    },
+
+    deleteBudget(id) {
+        ui.showConfirmation('Are you sure you want to delete this budget?', () => {
+            db.budgets = db.budgets.filter(b => b.id !== id);
+            db.save();
+            this.renderBudgetList();
+            ui.showToast('Budget deleted.', 'success');
+        });
+    }
+};
+
+const reportsManager = {
+    incomeExpenseChart: null,
+
+    initialize() {
+        // We'll call the render function when the page is changed to 'reports'
+    },
+
+    getMonthlyData() {
+        const data = {
+            labels: [],
+            income: [],
+            expenses: []
+        };
+        const monthMap = {};
+
+        db.transactions.forEach(t => {
+            const date = new Date(t.date);
+            const month = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+            if (!monthMap[month]) {
+                monthMap[month] = { income: 0, expenses: 0 };
+            }
+            if (t.type === 'income') {
+                monthMap[month].income += t.amount;
+            } else if (t.type === 'expense') {
+                monthMap[month].expenses += Math.abs(t.amount);
+            }
         });
 
-        db.save();
-        this.initialize();
-        form.reset();
-        ui.showToast('Budget saved successfully!', 'success');
+        // Sort months chronologically
+        const sortedMonths = Object.keys(monthMap).sort((a, b) => {
+            const [aMonth, aYear] = a.split(' ');
+            const [bMonth, bYear] = b.split(' ');
+            const aDate = new Date(`01 ${aMonth} 20${aYear}`);
+            const bDate = new Date(`01 ${bMonth} 20${bYear}`);
+            return aDate - bDate;
+        });
+
+        sortedMonths.forEach(month => {
+            data.labels.push(month);
+            data.income.push(monthMap[month].income);
+            data.expenses.push(monthMap[month].expenses);
+        });
+
+        return data;
+    },
+
+    renderIncomeExpenseChart() {
+        const ctx = document.getElementById('income-expense-chart')?.getContext('2d');
+        if (!ctx) return;
+
+        const monthlyData = this.getMonthlyData();
+
+        if (this.incomeExpenseChart) {
+            this.incomeExpenseChart.destroy();
+        }
+
+        this.incomeExpenseChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthlyData.labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: monthlyData.income,
+                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Expenses',
+                        data: monthlyData.expenses,
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 };
 
@@ -1467,6 +1608,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize UI
     ui.initialize();
+    reportsManager.initialize();
     
     // Set default date in transaction form to today
     const dateInput = document.getElementById('transaction-date');
