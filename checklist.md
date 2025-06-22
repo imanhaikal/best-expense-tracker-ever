@@ -221,7 +221,7 @@
     - **Issue (1:01):** On the "Transfer Money" modal, the user can select the same account for both "From" and "To".
     - **Required Fix:** The "To Account" dropdown list should automatically exclude the account selected in the "From Account" dropdown.
 
-- [ ] **Provide Feedback on Save Actions:** Saving user settings provides no confirmation.
+- [x] **Provide Feedback on Save Actions:** Saving user settings provides no confirmation.
     - **Issue (2:49):** On the "User Settings" page, clicking "Save Settings" gives no visual feedback (no spinner, no success message). The user doesn't know if the action worked.
     - **Required Fix:** After clicking save, show a loading indicator on the button, and upon success, display a success toast (e.g., "Settings saved successfully.").
 

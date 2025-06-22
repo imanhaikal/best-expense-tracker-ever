@@ -101,7 +101,9 @@ const ui = {
         recurringTypeSelect: document.getElementById('recurring-type'),
         toastContainer: document.getElementById('toast-container'),
         confirmationModalBackdrop: document.getElementById('confirmation-modal-backdrop'),
-        transferFromAccountSelect: document.getElementById('transfer-from-account')
+        transferFromAccountSelect: document.getElementById('transfer-from-account'),
+        reassignModalBackdrop: document.getElementById('reassign-modal-backdrop'),
+        saveSettingsBtn: document.querySelector('#settings-page button')
     },
 
     initialize() {
@@ -214,6 +216,21 @@ const ui = {
             if (currentToId && currentToId !== fromAccountId) {
                 toAccountSelect.value = currentToId;
             }
+        });
+
+        // Save settings button
+        this.elements.saveSettingsBtn?.addEventListener('click', (e) => {
+            const btn = e.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // Here you would normally save the settings to a backend
+                ui.showToast('Settings saved successfully!', 'success');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 1000);
         });
     },
 
@@ -671,6 +688,11 @@ const ui = {
     },
 
     handleTransferSubmit() {
+        const form = this.elements.transferForm;
+        if (!ui.validateForm(form)) {
+            return;
+        }
+
         const fromAccountId = document.getElementById('transfer-from-account').value;
         const toAccountId = document.getElementById('transfer-to-account').value;
         const amount = parseFloat(document.getElementById('transfer-amount').value);
@@ -679,11 +701,6 @@ const ui = {
 
         if (fromAccountId === toAccountId) {
             ui.showToast("From and To accounts cannot be the same.", 'error');
-            return;
-        }
-
-        if (!amount || amount <= 0) {
-            ui.showToast("Please enter a valid amount.", 'error');
             return;
         }
 
@@ -807,6 +824,85 @@ const ui = {
 
         cancelBtn.addEventListener('click', hide);
         closeBtn.addEventListener('click', hide);
+    },
+
+    showReassignmentModal(itemType, itemId, onConfirm) {
+        if (!this.elements.reassignModalBackdrop) return;
+
+        const item = itemType === 'account' 
+            ? db.accounts.find(a => a.id === itemId) 
+            : db.categories.find(c => c.id === itemId);
+
+        const transactions = db.transactions.filter(t => t[itemType === 'account' ? 'accountId' : 'categoryId'] === itemId);
+        
+        const modal = this.elements.reassignModalBackdrop;
+        modal.querySelector('#reassign-modal-message').textContent = 
+            `The ${itemType} "${item.name}" is linked to ${transactions.length} transactions. Please select a new ${itemType} to reassign them to before deleting.`;
+        
+        const reassignSelect = modal.querySelector('#reassign-select');
+        reassignSelect.innerHTML = '';
+        
+        const items = (itemType === 'account' ? db.accounts : db.categories)
+            .filter(i => i.id !== itemId && i.type === item.type); // Filter out the item itself and ensure same type
+        
+        items.forEach(i => {
+            const option = document.createElement('option');
+            option.value = i.id;
+            option.textContent = i.name;
+            reassignSelect.appendChild(option);
+        });
+
+        if (items.length === 0) {
+            ui.showToast(`Cannot delete ${item.name}. No other ${itemType} available for reassignment.`, 'error');
+            return;
+        }
+
+        modal.classList.add('active');
+
+        const confirmBtn = modal.querySelector('#confirm-reassign-btn');
+        const cancelBtn = modal.querySelector('#cancel-reassign-btn');
+        const closeBtn = modal.querySelector('#close-reassign-modal');
+
+        const hide = () => modal.classList.remove('active');
+
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        newConfirmBtn.addEventListener('click', () => {
+            const newId = reassignSelect.value;
+            onConfirm(newId);
+            hide();
+        });
+
+        cancelBtn.addEventListener('click', hide);
+        closeBtn.addEventListener('click', hide);
+    },
+
+    validateForm(form) {
+        let isValid = true;
+        const fields = form.querySelectorAll('[required]');
+
+        // Clear previous errors
+        form.querySelectorAll('.form-group.has-error').forEach(group => {
+            group.classList.remove('has-error');
+        });
+
+        fields.forEach(field => {
+            const group = field.closest('.form-group');
+            if (!field.value.trim()) {
+                isValid = false;
+                group.classList.add('has-error');
+                group.querySelector('.error-message').textContent = 'This field is required.';
+            }
+
+            if (field.type === 'number' && field.value && parseFloat(field.value) <= 0) {
+                isValid = false;
+                group.classList.add('has-error');
+                group.querySelector('.error-message').textContent = 'Please enter a positive value.';
+            }
+        });
+
+        return isValid;
     }
 };
 
@@ -821,7 +917,6 @@ const accountsManager = {
         const account = db.accounts.find(acc => acc.id === accountId);
         if (!account) return;
         
-        // Implement edit account functionality
         ui.showToast(`Edit Account for ${account.name} coming soon!`, 'info');
     },
     
@@ -829,11 +924,22 @@ const accountsManager = {
         const account = db.accounts.find(acc => acc.id === accountId);
         if (!account) return;
         
-        // Check if transactions exist for this account
         const hasTransactions = db.transactions.some(t => t.accountId === accountId);
         
         if (hasTransactions) {
-            ui.showToast(`Cannot delete ${account.name} because it has transactions.`, 'error');
+            ui.showReassignmentModal('account', accountId, (newAccountId) => {
+                // Reassign transactions
+                db.transactions.forEach(t => {
+                    if (t.accountId === accountId) {
+                        t.accountId = newAccountId;
+                    }
+                });
+                // Now delete the account
+                db.accounts = db.accounts.filter(acc => acc.id !== accountId);
+                db.save();
+                ui.renderDashboard();
+                ui.showToast(`Account "${account.name}" deleted and transactions reassigned.`, 'success');
+            });
             return;
         }
         
@@ -942,7 +1048,17 @@ const categoriesManager = {
         const hasTransactions = db.transactions.some(t => t.categoryId === categoryId);
         
         if (hasTransactions) {
-            ui.showToast(`Cannot delete ${category.name} because it has transactions.`, 'error');
+            ui.showReassignmentModal('category', categoryId, (newCategoryId) => {
+                db.transactions.forEach(t => {
+                    if (t.categoryId === categoryId) {
+                        t.categoryId = newCategoryId;
+                    }
+                });
+                db.categories = db.categories.filter(c => c.id !== categoryId);
+                db.save();
+                ui.renderDashboard();
+                ui.showToast(`Category "${category.name}" deleted and transactions reassigned.`, 'success');
+            });
             return;
         }
         

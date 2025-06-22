@@ -469,6 +469,23 @@ tr:hover {
     box-shadow: 0 0 0 3px rgba(106, 99, 227, 0.1);
 }
 
+.form-group .error-message {
+    color: var(--danger-color);
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.form-group.has-error input,
+.form-group.has-error select,
+.form-group.has-error textarea {
+    border-color: var(--danger-color);
+}
+
+.form-group.has-error .error-message {
+    display: block;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
