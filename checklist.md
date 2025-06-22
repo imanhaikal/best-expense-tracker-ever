@@ -2,34 +2,34 @@
 
 ## Tier 1: Core Functionality (The Foundation)
 
-- [ ] **Manual Transaction Entry**
-    - [ ] Design transaction entry form UI (Web & Mobile).
-    - [ ] Implement the form with fields: type (income/expense), amount, payee/merchant, date, category, account, notes.
-    - [ ] Add input validation (e.g., amount is a number, date is valid).
-    - [ ] Create a database schema for transactions.
-    - [ ] Implement backend logic to save transactions to the database.
-    - [ ] Implement logic to edit and delete existing transactions.
+- [x] **Manual Transaction Entry**
+    - [x] Design transaction entry form UI (Web & Mobile).
+    - [x] Implement the form with fields: type (income/expense), amount, payee/merchant, date, category, account, notes.
+    - [x] Add input validation (e.g., amount is a number, date is valid).
+    - [x] Create a database schema for transactions.
+    - [x] Implement backend logic to save transactions to the database.
+    - [x] Implement logic to edit and delete existing transactions.
 - [ ] **Recurring Transactions**
     - [ ] Design UI for scheduling recurring transactions (frequency, start/end date).
     - [ ] Create a database schema for recurring transaction rules.
     - [ ] Implement a backend service/cron job to automatically generate transactions based on schedules.
     - [ ] Add functionality to view, edit, and delete recurring transaction rules.
-- [ ] **Multi-Account Tracking**
-    - [ ] Design UI for adding/editing financial accounts (name, type, starting balance).
-    - [ ] Create a database schema for accounts.
-    - [ ] Link transactions to specific accounts.
-    - [ ] Calculate and display the current balance for each account.
+- [x] **Multi-Account Tracking**
+    - [x] Design UI for adding/editing financial accounts (name, type, starting balance).
+    - [x] Create a database schema for accounts.
+    - [x] Link transactions to specific accounts.
+    - [x] Calculate and display the current balance for each account.
     - [ ] Implement logic for transfers between accounts.
-- [ ] **Customizable Categories**
-    - [ ] Design UI for creating, editing, and deleting categories.
+- [x] **Customizable Categories**
+    - [x] Design UI for creating, editing, and deleting categories.
     - [ ] Create a database schema to support nested sub-categories (self-referencing table).
-    - [ ] Implement backend logic for CRUD operations on categories.
-    - [ ] Ensure transaction entry form can handle category/sub-category selection.
-- [ ] **Basic Budgeting**
-    - [ ] Design UI for setting monthly spending limits per category.
-    - [ ] Create a database schema for budgets.
-    - [ ] Implement logic to calculate progress against each budget.
-    - [ ] Create a simple view to display budget progress (e.g., progress bars).
+    - [x] Implement backend logic for CRUD operations on categories.
+    - [x] Ensure transaction entry form can handle category/sub-category selection.
+- [x] **Basic Budgeting**
+    - [x] Design UI for setting monthly spending limits per category.
+    - [x] Create a database schema for budgets.
+    - [x] Implement logic to calculate progress against each budget.
+    - [x] Create a simple view to display budget progress (e.g., progress bars).
 
 ## Tier 2: Automation & Intelligence (The "Magic")
 
