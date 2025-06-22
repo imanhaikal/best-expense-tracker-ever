@@ -252,4 +252,15 @@
     - [x] The entire page is a placeholder. "Income vs. Expenses" report needs to be built.
 
 - [x] **Categories Page Functionality:**
-    - [x] The ability to add/edit category icons and colors needs to be fully implemented and saved correctly. 
+    - [x] The ability to add/edit category icons and colors needs to be fully implemented and saved correctly.
+
+# Website Checklist
+
+- [x] Change the hardcoded Total Balance from `$0.00` to `$50.00`.
+- [x] Remove the "Recent Transactions" table from the dashboard page to match the cleaner design in the image.
+- [x] Ensure the "Spending by Category" widget is correctly styled for its empty state, displaying "$0.00 Monthly Spending" in the center.
+- [x] Refine the CSS to match the visual design from the image, including:
+  - [x] Implementing the dark theme color scheme (backgrounds, text, etc.).
+  - [x] Adjusting fonts, spacing, padding, and margins for a polished look.
+  - [x] Applying correct border-radius and box-shadows to widgets.
+  - [x] Styling the active sidebar link with a purple background. 

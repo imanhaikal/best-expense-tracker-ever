@@ -7,8 +7,8 @@
     --warning-color: #f59e0b;
     
     --bg-color: #f0f2f5;
-    --sidebar-bg: rgba(255, 255, 255, 0.7);
-    --widget-bg: rgba(255, 255, 255, 0.8);
+    --sidebar-bg: #ffffff;
+    --widget-bg: #ffffff;
     --text-color: #1f2937;
     --text-muted-color: #6b7280;
     --border-color: rgba(0, 0, 0, 0.07);
@@ -19,13 +19,13 @@
 }
 
 .dark-mode {
-    --primary-gradient: linear-gradient(135deg, #808bf9 0%, #8e5dd5 100%);
-    --primary-color: #808bf9;
-    --bg-color: #111827;
-    --sidebar-bg: rgba(29, 38, 55, 0.6);
-    --widget-bg: rgba(29, 38, 55, 0.7);
-    --text-color: #e5e7eb;
-    --text-muted-color: #9ca3af;
+    --primary-gradient: linear-gradient(135deg, #7f5bff 0%, #6c47ff 100%);
+    --primary-color: #7f5bff;
+    --bg-color: #0f172a;
+    --sidebar-bg: #1e293b;
+    --widget-bg: #1e293b;
+    --text-color: #e2e8f0;
+    --text-muted-color: #94a3b8;
     --border-color: rgba(255, 255, 255, 0.08);
     --shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.4);
 }
@@ -64,8 +64,6 @@ body::before { /* Subtle background gradient */
 .sidebar {
     width: var(--sidebar-width);
     background-color: var(--sidebar-bg);
-    backdrop-filter: var(--backdrop-blur);
-    -webkit-backdrop-filter: var(--backdrop-blur);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -80,7 +78,7 @@ body::before { /* Subtle background gradient */
 
 .sidebar-header {
     padding: 25px;
-    font-size: 1.8rem;
+    font-size: 1.3rem;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -90,7 +88,7 @@ body::before { /* Subtle background gradient */
 }
 
 .sidebar-header .logo-icon { 
-    font-size: 2rem; 
+    font-size: 1.5rem; 
     min-width: 40px; 
     text-align: center; 
 }
@@ -298,20 +296,19 @@ input:checked + .slider:before {
 }
 
 .widget {
-    background-color: var(--widget-bg);
+    background: var(--widget-bg);
+    border-radius: 16px;
     padding: 25px;
-    border-radius: 20px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
+    animation: slideUpFadeIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
     opacity: 0;
     transform: translateY(20px);
-    animation: slideUpFadeIn 0.5s forwards;
 }
 
 .widget:hover { 
-    transform: translateY(-5px) scale(1.02); 
-    box-shadow: 0 15px 35px -10px rgba(0,0,0,0.15); 
+    transform: translateY(15px);
+    box-shadow: 0 15px 35px -15px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes slideUpFadeIn { 
@@ -378,14 +375,15 @@ input:checked + .slider:before {
 }
 
 #spending-chart-total { 
-    font-size: 2rem; 
-    font-weight: 700; 
-    color: var(--text-color); 
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-color);
 }
 
 #spending-chart-label { 
-    font-size: 0.9rem; 
-    color: var(--text-muted-color); 
+    font-size: 0.9rem;
+    color: var(--text-muted-color);
+    margin-top: 5px;
 }
 
 /* Table Styling */
