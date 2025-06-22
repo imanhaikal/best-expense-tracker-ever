@@ -77,7 +77,12 @@ const ui = {
         recentTransactions: document.getElementById('recent-transactions'),
         addTransactionBtn: document.querySelector('.add-transaction-btn'),
         categoriesForTransaction: document.getElementById('transaction-category'),
-        accountsForTransaction: document.getElementById('transaction-account')
+        accountsForTransaction: document.getElementById('transaction-account'),
+        transferMoneyBtn: document.getElementById('transfer-money-btn'),
+        transferModalBackdrop: document.getElementById('transfer-modal-backdrop'),
+        closeTransferModalBtn: document.getElementById('close-transfer-modal'),
+        cancelTransferBtn: document.getElementById('cancel-transfer-btn'),
+        transferForm: document.getElementById('transfer-form')
     },
 
     initialize() {
@@ -119,6 +124,25 @@ const ui = {
         this.elements.addTransactionBtn?.addEventListener('click', () => {
             this.changePage('transactions');
         });
+
+        // Transfer money button
+        this.elements.transferMoneyBtn?.addEventListener('click', () => {
+            this.showTransferModal();
+        });
+
+        // Close transfer modal
+        this.elements.closeTransferModalBtn?.addEventListener('click', () => {
+            this.hideTransferModal();
+        });
+        this.elements.cancelTransferBtn?.addEventListener('click', () => {
+            this.hideTransferModal();
+        });
+
+        // Transfer form submission
+        this.elements.transferForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleTransferSubmit();
+        });
     },
 
     setupTheme() {
@@ -145,6 +169,9 @@ const ui = {
 
         // Update navigation
         this.updateNavigationState(pageId);
+
+        // Update dashboard summary
+        this.updateDashboardSummary();
     },
 
     updateNavigationState(activePageId = null) {
@@ -369,6 +396,7 @@ const ui = {
         
         const monthlyIncome = db.transactions
             .filter(t => t.type === 'income' && 
+                    !t.isTransfer &&
                     new Date(t.date).getMonth() === currentMonth && 
                     new Date(t.date).getFullYear() === currentYear)
             .reduce((sum, t) => sum + t.amount, 0);
@@ -381,6 +409,7 @@ const ui = {
         // Update monthly expenses
         const monthlyExpenses = db.transactions
             .filter(t => t.type === 'expense' && 
+                    !t.isTransfer &&
                     new Date(t.date).getMonth() === currentMonth && 
                     new Date(t.date).getFullYear() === currentYear)
             .reduce((sum, t) => sum + t.amount, 0);
@@ -407,6 +436,7 @@ const ui = {
         
         db.transactions
             .filter(t => t.type === 'expense' && 
+                    !t.isTransfer &&
                     new Date(t.date).getMonth() === currentMonth && 
                     new Date(t.date).getFullYear() === currentYear)
             .forEach(transaction => {
@@ -533,6 +563,102 @@ const ui = {
         
         // Show success message
         alert('Transaction added successfully!');
+
+        // Go back to dashboard
+        this.changePage('dashboard');
+    },
+
+    showTransferModal() {
+        if (!this.elements.transferModalBackdrop) return;
+
+        // Populate account dropdowns
+        const fromAccountSelect = document.getElementById('transfer-from-account');
+        const toAccountSelect = document.getElementById('transfer-to-account');
+        fromAccountSelect.innerHTML = '';
+        toAccountSelect.innerHTML = '';
+
+        db.accounts.forEach(account => {
+            const option1 = document.createElement('option');
+            option1.value = account.id;
+            option1.textContent = `${account.name} ($${account.balance.toFixed(2)})`;
+            fromAccountSelect.appendChild(option1);
+
+            const option2 = document.createElement('option');
+            option2.value = account.id;
+            option2.textContent = `${account.name} ($${account.balance.toFixed(2)})`;
+            toAccountSelect.appendChild(option2);
+        });
+        
+        // Set date to today
+        document.getElementById('transfer-date').valueAsDate = new Date();
+
+        this.elements.transferModalBackdrop.classList.add('active');
+    },
+
+    hideTransferModal() {
+        if (!this.elements.transferModalBackdrop) return;
+        this.elements.transferModalBackdrop.classList.remove('active');
+        this.elements.transferForm.reset();
+    },
+
+    handleTransferSubmit() {
+        const fromAccountId = document.getElementById('transfer-from-account').value;
+        const toAccountId = document.getElementById('transfer-to-account').value;
+        const amount = parseFloat(document.getElementById('transfer-amount').value);
+        const date = document.getElementById('transfer-date').value;
+        const notes = document.getElementById('transfer-notes').value;
+
+        if (fromAccountId === toAccountId) {
+            alert("From and To accounts cannot be the same.");
+            return;
+        }
+
+        if (!amount || amount <= 0) {
+            alert("Please enter a valid amount.");
+            return;
+        }
+
+        const fromAccount = db.accounts.find(acc => acc.id === fromAccountId);
+        if (fromAccount.balance < amount) {
+            alert("Insufficient funds in the 'From' account.");
+            return;
+        }
+
+        // Create two transactions for the transfer
+        const expenseTransaction = {
+            id: 'txn_' + Date.now(),
+            type: 'expense',
+            amount: -Math.abs(amount),
+            date: date,
+            payee: `Transfer to ${db.accounts.find(acc => acc.id === toAccountId).name}`,
+            categoryId: 'cat_transfer', // Special category for transfers
+            accountId: fromAccountId,
+            notes: notes,
+            isTransfer: true
+        };
+
+        const incomeTransaction = {
+            id: 'txn_' + (Date.now() + 1),
+            type: 'income',
+            amount: Math.abs(amount),
+            date: date,
+            payee: `Transfer from ${fromAccount.name}`,
+            categoryId: 'cat_transfer', // Special category for transfers
+            accountId: toAccountId,
+            notes: notes,
+            isTransfer: true
+        };
+
+        db.transactions.push(expenseTransaction, incomeTransaction);
+
+        // Update account balances
+        accountsManager.updateBalance(fromAccountId, -amount);
+        accountsManager.updateBalance(toAccountId, amount);
+
+        db.save();
+        this.renderDashboard();
+        this.hideTransferModal();
+        alert('Transfer successful!');
     }
 };
 
@@ -574,6 +700,13 @@ const accountsManager = {
             ui.renderDashboard();
             
             alert('Account deleted successfully!');
+        }
+    },
+
+    updateBalance(accountId, amount) {
+        const account = db.accounts.find(acc => acc.id === accountId);
+        if (account) {
+            account.balance += amount;
         }
     }
 };
@@ -622,6 +755,17 @@ const categoriesManager = {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Add a transfer category if it doesn't exist
+    if (!db.categories.some(cat => cat.id === 'cat_transfer')) {
+        db.categories.push({
+            id: 'cat_transfer',
+            name: 'Transfer',
+            icon: 'fa-exchange-alt',
+            color: '#888',
+            type: 'internal' // Special type to exclude from income/expense reports
+        });
+    }
+
     // Load data from local storage
     db.load();
     

@@ -19,7 +19,7 @@
     - [x] Create a database schema for accounts.
     - [x] Link transactions to specific accounts.
     - [x] Calculate and display the current balance for each account.
-    - [ ] Implement logic for transfers between accounts.
+    - [x] Implement logic for transfers between accounts.
 - [x] **Customizable Categories**
     - [x] Design UI for creating, editing, and deleting categories.
     - [ ] Create a database schema to support nested sub-categories (self-referencing table).
