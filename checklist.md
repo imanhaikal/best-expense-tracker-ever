@@ -9,11 +9,11 @@
     - [x] Create a database schema for transactions.
     - [x] Implement backend logic to save transactions to the database.
     - [x] Implement logic to edit and delete existing transactions.
-- [ ] **Recurring Transactions**
-    - [ ] Design UI for scheduling recurring transactions (frequency, start/end date).
-    - [ ] Create a database schema for recurring transaction rules.
-    - [ ] Implement a backend service/cron job to automatically generate transactions based on schedules.
-    - [ ] Add functionality to view, edit, and delete recurring transaction rules.
+- [x] **Recurring Transactions**
+    - [x] Design UI for scheduling recurring transactions (frequency, start/end date).
+    - [x] Create a database schema for recurring transaction rules.
+    - [x] Implement a backend service/cron job to automatically generate transactions based on schedules.
+    - [x] Add functionality to view, edit, and delete recurring transaction rules.
 - [x] **Multi-Account Tracking**
     - [x] Design UI for adding/editing financial accounts (name, type, starting balance).
     - [x] Create a database schema for accounts.

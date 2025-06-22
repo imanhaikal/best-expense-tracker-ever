@@ -7,6 +7,7 @@ const db = {
     transactions: [],
     categories: [],
     budgets: [],
+    recurring: [],
     
     // Local storage management
     save() {
@@ -14,7 +15,8 @@ const db = {
             accounts: this.accounts,
             transactions: this.transactions,
             categories: this.categories,
-            budgets: this.budgets
+            budgets: this.budgets,
+            recurring: this.recurring
         }));
     },
     
@@ -24,6 +26,7 @@ const db = {
         this.transactions = data.transactions || [];
         this.categories = data.categories || [];
         this.budgets = data.budgets || [];
+        this.recurring = data.recurring || [];
         
         if (this.categories.length === 0) {
             this.initializeDefaultCategories();
@@ -86,7 +89,13 @@ const ui = {
         categoryModalBackdrop: document.getElementById('category-modal-backdrop'),
         closeCategoryModalBtn: document.getElementById('close-category-modal'),
         cancelCategoryBtn: document.getElementById('cancel-category-btn'),
-        categoryForm: document.getElementById('category-form')
+        categoryForm: document.getElementById('category-form'),
+        addRecurringBtn: document.getElementById('add-recurring-btn'),
+        recurringModalBackdrop: document.getElementById('recurring-modal-backdrop'),
+        closeRecurringModalBtn: document.getElementById('close-recurring-modal'),
+        cancelRecurringBtn: document.getElementById('cancel-recurring-btn'),
+        recurringForm: document.getElementById('recurring-form'),
+        recurringTransactionsList: document.getElementById('recurring-transactions-list')
     },
 
     initialize() {
@@ -155,6 +164,15 @@ const ui = {
             e.preventDefault();
             categoriesManager.handleCategorySubmit();
         });
+
+        // Recurring modal
+        this.elements.addRecurringBtn?.addEventListener('click', () => recurringManager.showRecurringModal());
+        this.elements.closeRecurringModalBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
+        this.elements.cancelRecurringBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
+        this.elements.recurringForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            recurringManager.handleRecurringSubmit();
+        });
     },
 
     setupTheme() {
@@ -177,6 +195,10 @@ const ui = {
         const currentPage = document.getElementById(pageId + '-page');
         if (currentPage) {
             currentPage.classList.add('active');
+        }
+
+        if (pageId === 'recurring') {
+            recurringManager.renderRecurringList();
         }
 
         // Update navigation
@@ -873,6 +895,165 @@ const categoriesManager = {
     }
 };
 
+const recurringManager = {
+    renderRecurringList() {
+        const list = ui.elements.recurringTransactionsList;
+        if (!list) return;
+        list.innerHTML = '';
+
+        db.recurring.forEach(item => {
+            const account = db.accounts.find(a => a.id === item.accountId);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.payee}</td>
+                <td>$${item.amount.toFixed(2)}</td>
+                <td>${item.frequency.charAt(0).toUpperCase() + item.frequency.slice(1)}</td>
+                <td>${new Date(item.nextDate).toLocaleDateString()}</td>
+                <td>${account ? account.name : 'N/A'}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm" onclick="recurringManager.editRecurring('${item.id}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="recurringManager.deleteRecurring('${item.id}')"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            list.appendChild(row);
+        });
+    },
+
+    showRecurringModal() {
+        const modal = ui.elements.recurringModalBackdrop;
+        if (!modal) return;
+
+        document.getElementById('recurring-modal-title').textContent = 'Add Recurring Transaction';
+        ui.elements.recurringForm.reset();
+        document.getElementById('recurring-id').value = '';
+        document.getElementById('recurring-start-date').valueAsDate = new Date();
+        
+        // Populate categories and accounts
+        this.populateSelect('recurring-category', db.categories);
+        this.populateSelect('recurring-account', db.accounts);
+
+        modal.classList.add('active');
+    },
+
+    editRecurring(id) {
+        const item = db.recurring.find(r => r.id === id);
+        if (!item) return;
+
+        this.showRecurringModal();
+        document.getElementById('recurring-modal-title').textContent = 'Edit Recurring Transaction';
+        
+        document.getElementById('recurring-id').value = item.id;
+        document.getElementById('recurring-type').value = item.type;
+        document.getElementById('recurring-amount').value = item.amount;
+        document.getElementById('recurring-payee').value = item.payee;
+        document.getElementById('recurring-category').value = item.categoryId;
+        document.getElementById('recurring-account').value = item.accountId;
+        document.getElementById('recurring-frequency').value = item.frequency;
+        document.getElementById('recurring-start-date').value = item.startDate;
+        document.getElementById('recurring-notes').value = item.notes;
+    },
+
+    deleteRecurring(id) {
+        if (confirm('Are you sure you want to delete this recurring transaction?')) {
+            db.recurring = db.recurring.filter(r => r.id !== id);
+            db.save();
+            this.renderRecurringList();
+        }
+    },
+
+    hideRecurringModal() {
+        const modal = ui.elements.recurringModalBackdrop;
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    },
+
+    handleRecurringSubmit() {
+        const id = document.getElementById('recurring-id').value;
+        const recurringData = {
+            type: document.getElementById('recurring-type').value,
+            amount: parseFloat(document.getElementById('recurring-amount').value),
+            payee: document.getElementById('recurring-payee').value,
+            categoryId: document.getElementById('recurring-category').value,
+            accountId: document.getElementById('recurring-account').value,
+            frequency: document.getElementById('recurring-frequency').value,
+            startDate: document.getElementById('recurring-start-date').value,
+            notes: document.getElementById('recurring-notes').value,
+            nextDate: document.getElementById('recurring-start-date').value,
+            lastProcessedDate: null
+        };
+
+        if (id) {
+            const index = db.recurring.findIndex(r => r.id === id);
+            db.recurring[index] = { ...db.recurring[index], ...recurringData };
+        } else {
+            recurringData.id = 'rec_' + Date.now();
+            db.recurring.push(recurringData);
+        }
+
+        db.save();
+        this.renderRecurringList();
+        this.hideRecurringModal();
+    },
+
+    populateSelect(elementId, items) {
+        const select = document.getElementById(elementId);
+        select.innerHTML = '';
+        items.forEach(item => {
+            if(item.type === 'internal') return; // Skip transfer category
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.name;
+            select.appendChild(option);
+        });
+    },
+
+    processRecurringTransactions() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        db.recurring.forEach(item => {
+            let nextDate = new Date(item.nextDate);
+            nextDate.setHours(0, 0, 0, 0);
+
+            while (nextDate <= today) {
+                // Create the transaction
+                const transactionAmount = item.type === 'expense' ? -Math.abs(item.amount) : Math.abs(item.amount);
+                const newTransaction = {
+                    id: 'txn_' + Date.now() + Math.random(),
+                    type: item.type,
+                    amount: transactionAmount,
+                    date: new Date(nextDate).toISOString().split('T')[0],
+                    payee: item.payee,
+                    categoryId: item.categoryId,
+                    accountId: item.accountId,
+                    notes: `(Recurring) ${item.notes || ''}`
+                };
+                db.transactions.push(newTransaction);
+                accountsManager.updateBalance(item.accountId, transactionAmount);
+
+                // Calculate the next date
+                switch (item.frequency) {
+                    case 'daily':
+                        nextDate.setDate(nextDate.getDate() + 1);
+                        break;
+                    case 'weekly':
+                        nextDate.setDate(nextDate.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                        break;
+                    case 'yearly':
+                        nextDate.setFullYear(nextDate.getFullYear() + 1);
+                        break;
+                }
+            }
+            item.nextDate = new Date(nextDate).toISOString().split('T')[0];
+        });
+        db.save();
+    }
+};
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Add a transfer category if it doesn't exist
@@ -889,6 +1070,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data from local storage
     db.load();
     
+    // Process recurring transactions
+    recurringManager.processRecurringTransactions();
+
     // Initialize UI
     ui.initialize();
     
