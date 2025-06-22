@@ -82,7 +82,11 @@ const ui = {
         transferModalBackdrop: document.getElementById('transfer-modal-backdrop'),
         closeTransferModalBtn: document.getElementById('close-transfer-modal'),
         cancelTransferBtn: document.getElementById('cancel-transfer-btn'),
-        transferForm: document.getElementById('transfer-form')
+        transferForm: document.getElementById('transfer-form'),
+        categoryModalBackdrop: document.getElementById('category-modal-backdrop'),
+        closeCategoryModalBtn: document.getElementById('close-category-modal'),
+        cancelCategoryBtn: document.getElementById('cancel-category-btn'),
+        categoryForm: document.getElementById('category-form')
     },
 
     initialize() {
@@ -142,6 +146,14 @@ const ui = {
         this.elements.transferForm?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleTransferSubmit();
+        });
+
+        // Category modal
+        this.elements.closeCategoryModalBtn?.addEventListener('click', () => categoriesManager.hideCategoryModal());
+        this.elements.cancelCategoryBtn?.addEventListener('click', () => categoriesManager.hideCategoryModal());
+        this.elements.categoryForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            categoriesManager.handleCategorySubmit();
         });
     },
 
@@ -260,10 +272,12 @@ const ui = {
         if (!this.elements.categoriesList) return;
         
         this.elements.categoriesList.innerHTML = '';
-        
-        db.categories.forEach(category => {
+        const categories = db.categories.filter(c => !c.parentId); // Get top-level categories
+
+        const renderCategory = (category, level) => {
             const categoryItem = document.createElement('div');
             categoryItem.className = 'category-item';
+            categoryItem.style.marginLeft = `${level * 20}px`;
             categoryItem.innerHTML = `
                 <div class="category-icon" style="background-color: ${category.color}">
                     <i class="fas ${category.icon}"></i>
@@ -282,7 +296,12 @@ const ui = {
                 </div>
             `;
             this.elements.categoriesList.appendChild(categoryItem);
-        });
+
+            const subCategories = db.categories.filter(c => c.parentId === category.id);
+            subCategories.forEach(sub => renderCategory(sub, level + 1));
+        };
+
+        categories.forEach(category => renderCategory(category, 0));
         
         // Add "Add Category" button
         const addCategoryItem = document.createElement('div');
@@ -299,30 +318,34 @@ const ui = {
         if (this.elements.categoriesForTransaction) {
             this.elements.categoriesForTransaction.innerHTML = '';
             
+            const renderCategoryOptions = (categories, level, group) => {
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = `${'--'.repeat(level)} ${category.name}`;
+                    group.appendChild(option);
+
+                    const subCategories = db.categories.filter(c => c.parentId === category.id);
+                    if (subCategories.length > 0) {
+                        renderCategoryOptions(subCategories, level + 1, group);
+                    }
+                });
+            };
+
             // Group categories by type
-            const incomeCategories = db.categories.filter(cat => cat.type === 'income');
-            const expenseCategories = db.categories.filter(cat => cat.type === 'expense');
+            const incomeCategories = db.categories.filter(cat => cat.type === 'income' && !cat.parentId);
+            const expenseCategories = db.categories.filter(cat => cat.type === 'expense' && !cat.parentId);
             
             // Add income categories
             const incomeGroup = document.createElement('optgroup');
             incomeGroup.label = 'Income';
-            incomeCategories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.id;
-                option.textContent = cat.name;
-                incomeGroup.appendChild(option);
-            });
+            renderCategoryOptions(incomeCategories, 0, incomeGroup);
             this.elements.categoriesForTransaction.appendChild(incomeGroup);
             
             // Add expense categories
             const expenseGroup = document.createElement('optgroup');
             expenseGroup.label = 'Expenses';
-            expenseCategories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.id;
-                option.textContent = cat.name;
-                expenseGroup.appendChild(option);
-            });
+            renderCategoryOptions(expenseCategories, 0, expenseGroup);
             this.elements.categoriesForTransaction.appendChild(expenseGroup);
         }
     },
@@ -714,22 +737,82 @@ const accountsManager = {
 // Categories Manager
 const categoriesManager = {
     showAddCategoryModal() {
-        // Implement modal for adding categories
-        alert("Add Category functionality will be implemented soon!");
+        const modal = ui.elements.categoryModalBackdrop;
+        if (!modal) return;
+
+        document.getElementById('category-modal-title').textContent = 'Add Category';
+        ui.elements.categoryForm.reset();
+        document.getElementById('category-id').value = '';
+        
+        this.populateParentCategoryDropdown();
+
+        modal.classList.add('active');
+    },
+
+    hideCategoryModal() {
+        const modal = ui.elements.categoryModalBackdrop;
+        if (modal) {
+            modal.classList.remove('active');
+        }
     },
     
     editCategory(categoryId) {
         const category = db.categories.find(cat => cat.id === categoryId);
         if (!category) return;
         
-        // Implement edit category functionality
-        alert(`Edit Category functionality for ${category.name} will be implemented soon!`);
+        const modal = ui.elements.categoryModalBackdrop;
+        if (!modal) return;
+
+        document.getElementById('category-modal-title').textContent = 'Edit Category';
+        ui.elements.categoryForm.reset();
+        
+        document.getElementById('category-id').value = category.id;
+        document.getElementById('category-name').value = category.name;
+        document.getElementById('category-type').value = category.type;
+        document.getElementById('category-icon').value = category.icon;
+        document.getElementById('category-color').value = category.color;
+
+        this.populateParentCategoryDropdown(category.id, category.parentId);
+
+        modal.classList.add('active');
+    },
+
+    populateParentCategoryDropdown(currentCategoryId = null, parentId = null) {
+        const parentSelect = document.getElementById('category-parent');
+        parentSelect.innerHTML = '<option value="">None</option>'; // No parent option
+        
+        const categories = db.categories.filter(c => c.id !== currentCategoryId && !c.parentId); // Prevent self-parenting and deep nesting for simplicity
+
+        const renderCategoryOptions = (categories, level) => {
+            categories.forEach(category => {
+                // Prevent a category from being its own descendant
+                if(category.id === currentCategoryId) return;
+
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = `${'--'.repeat(level)} ${category.name}`;
+                parentSelect.appendChild(option);
+            });
+        };
+
+        renderCategoryOptions(categories, 0);
+        
+        if (parentId) {
+            parentSelect.value = parentId;
+        }
     },
     
     deleteCategory(categoryId) {
         const category = db.categories.find(cat => cat.id === categoryId);
         if (!category) return;
         
+        // Check if it has sub-categories
+        const hasSubCategories = db.categories.some(c => c.parentId === categoryId);
+        if (hasSubCategories) {
+            alert('This category has sub-categories. Please delete or reassign them first.');
+            return;
+        }
+
         // Check if transactions exist for this category
         const hasTransactions = db.transactions.some(t => t.categoryId === categoryId);
         
@@ -750,6 +833,43 @@ const categoriesManager = {
             
             alert('Category deleted successfully!');
         }
+    },
+
+    handleCategorySubmit() {
+        const id = document.getElementById('category-id').value;
+        const name = document.getElementById('category-name').value;
+        const type = document.getElementById('category-type').value;
+        const parentId = document.getElementById('category-parent').value || null;
+        const icon = document.getElementById('category-icon').value || 'fa-tag';
+        const color = document.getElementById('category-color').value;
+
+        if (!name) {
+            alert('Category name is required.');
+            return;
+        }
+
+        if (id) { // Editing existing category
+            const category = db.categories.find(c => c.id === id);
+            category.name = name;
+            category.type = type;
+            category.parentId = parentId;
+            category.icon = icon;
+            category.color = color;
+        } else { // Creating new category
+            const newCategory = {
+                id: 'cat_' + Date.now(),
+                name,
+                type,
+                parentId,
+                icon,
+                color
+            };
+            db.categories.push(newCategory);
+        }
+
+        db.save();
+        ui.renderDashboard();
+        this.hideCategoryModal();
     }
 };
 

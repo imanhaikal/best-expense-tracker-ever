@@ -22,7 +22,7 @@
     - [x] Implement logic for transfers between accounts.
 - [x] **Customizable Categories**
     - [x] Design UI for creating, editing, and deleting categories.
-    - [ ] Create a database schema to support nested sub-categories (self-referencing table).
+    - [x] Create a database schema to support nested sub-categories (self-referencing table).
     - [x] Implement backend logic for CRUD operations on categories.
     - [x] Ensure transaction entry form can handle category/sub-category selection.
 - [x] **Basic Budgeting**
