@@ -186,4 +186,70 @@
     - [ ] Ensure no unnecessary user data is collected.
 - [ ] **Optional Local-Only Mode**
     - [ ] Architect the apps to work with a local database (e.g., SQLite).
-    - [ ] Implement a cloud-sync toggle in the settings. 
+    - [ ] Implement a cloud-sync toggle in the settings.
+
+## Website Fixes Checklist
+### 🔴 High-Priority Bugs (Data Integrity & Core Logic)
+
+*These issues can lead to incorrect data, user confusion, and a broken experience.*
+
+- [x] **Category Filtering is Broken:** On the Add New Transaction and Add Recurring Transaction pages, the "Category" dropdown is not filtered by the "Transaction Type".
+    - **To Reproduce (0:04 & 2:04):** Select "Expense" as the type, but the category dropdown still shows "Income" categories like "Salary" and "Investments". Select "Income" and it still shows "Expense" categories.
+    - **Required Fix:** The category dropdown list must dynamically update to show only relevant categories based on the selected transaction type (Income/Expense).
+
+- [x] **Invalid Category Parenting Logic:** The Edit Category modal allows assigning a parent category of a different type.
+    - **To Reproduce (1:22):** The user edits "Food & Dining" (an expense), changes its type to "Income", and is then able to select "Transportation" (an expense) as its parent.
+    - **Required Fix:** The "Parent Category" dropdown should be filtered to only show categories of the same type as the one being edited. You should not be able to make an income category a sub-category of an expense, or vice-versa.
+
+- [x] **Changing Category Type Corrupts Data:** A category's type (Income/Expense) can be changed even when it has transactions linked to it.
+    - **To Reproduce (1:34):** The "Food & Dining" category, which has a $50 expense transaction, was successfully changed to an "Income" type. This creates a logical data conflict (an expense transaction is now in an income category).
+    - **Required Fix:** If a category has existing transactions, the "Type" dropdown in the "Edit Category" modal should be disabled to prevent data corruption.
+
+### 🟡 Major UX/UI Fixes
+
+*These issues make the application feel unprofessional, jarring, and difficult to use.*
+
+- [ ] **Replace Native Browser Alerts (alert()):** The site heavily relies on `localhost:8000 says...` alerts for feedback. This is poor practice.
+    - **Examples:** "Transaction added successfully" (0:38), "Edit Account... will be implemented soon" (0:49), "Cannot delete Default Account..." (0:53), etc.
+    - **Required Fix:** Implement a consistent, modern, in-app notification system. "Toast" or "Snackbar" popups are standard for success/error messages. For "coming soon" features, the button should either be disabled with a tooltip or removed.
+
+- [ ] **Improve Deletion/Reassignment Flow:** The app prevents deleting accounts and categories with transactions but offers a poor user experience.
+    - **Issue (0:53 & 1:48):** The alert just says "Please delete/reassign the transactions first." It forces the user to manually go find and edit every single transaction, which is tedious and error-prone.
+    - **Required Fix:** When a user tries to delete a category/account with transactions, the confirmation modal should offer a solution, such as: "This category has 5 transactions. Please select a new category to reassign them to before deleting." followed by a dropdown of other valid categories.
+
+- [ ] **Prevent Invalid User Actions:** The UI allows users to get into obvious error states.
+    - **Issue (1:01):** On the "Transfer Money" modal, the user can select the same account for both "From" and "To".
+    - **Required Fix:** The "To Account" dropdown list should automatically exclude the account selected in the "From Account" dropdown.
+
+- [ ] **Provide Feedback on Save Actions:** Saving user settings provides no confirmation.
+    - **Issue (2:49):** On the "User Settings" page, clicking "Save Settings" gives no visual feedback (no spinner, no success message). The user doesn't know if the action worked.
+    - **Required Fix:** After clicking save, show a loading indicator on the button, and upon success, display a success toast (e.g., "Settings saved successfully.").
+
+### 🟠 General Usability & Inconsistencies
+
+*These are smaller issues that detract from the overall quality and polish of the application.*
+
+- [ ] **Inconsistent Confirmation Dialogs:** The application uses different methods for confirming deletion.
+    - **Issue (2:32):** Deleting a recurring transaction uses a native browser `confirm()` box ("Are you sure..."), while other actions use `alert()`.
+    - **Required Fix:** Use a single, consistently styled, in-app modal for all critical confirmations (e.g., "Delete Item?").
+
+- [ ] **Validation Message Style Inconsistency:** The app has one good example of validation that should be used everywhere else.
+    - **Good Example (2:00):** On the "Budgets" page, the "Please select an item in the list" message is a well-styled, non-blocking, inline notification.
+    - **Required Fix:** All form validation should follow this "good" model instead of relying on native browser alerts.
+
+### ⚪ Missing / Incomplete Features
+
+*These are features that are clearly planned but not yet functional.*
+
+- [ ] **Accounts Page Functionality:**
+    - [ ] Implement "Edit Account".
+    - [ ] Implement "Add Account".
+
+- [ ] **Budgets Page Functionality:**
+    - [ ] The "Add New Budget" form is incomplete. The category dropdown is empty and saving doesn't work.
+
+- [ ] **Reports Page:**
+    - [ ] The entire page is a placeholder. "Income vs. Expenses" report needs to be built.
+
+- [ ] **Categories Page Functionality:**
+    - [ ] The ability to add/edit category icons and colors needs to be fully implemented and saved correctly. 

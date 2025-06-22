@@ -90,12 +90,15 @@ const ui = {
         closeCategoryModalBtn: document.getElementById('close-category-modal'),
         cancelCategoryBtn: document.getElementById('cancel-category-btn'),
         categoryForm: document.getElementById('category-form'),
+        categoryTypeSelect: document.getElementById('category-type'),
         addRecurringBtn: document.getElementById('add-recurring-btn'),
         recurringModalBackdrop: document.getElementById('recurring-modal-backdrop'),
         closeRecurringModalBtn: document.getElementById('close-recurring-modal'),
         cancelRecurringBtn: document.getElementById('cancel-recurring-btn'),
         recurringForm: document.getElementById('recurring-form'),
-        recurringTransactionsList: document.getElementById('recurring-transactions-list')
+        recurringTransactionsList: document.getElementById('recurring-transactions-list'),
+        transactionTypeSelect: document.getElementById('transaction-type'),
+        recurringTypeSelect: document.getElementById('recurring-type')
     },
 
     initialize() {
@@ -165,6 +168,11 @@ const ui = {
             categoriesManager.handleCategorySubmit();
         });
 
+        this.elements.categoryTypeSelect?.addEventListener('change', (e) => {
+            const currentCategoryId = document.getElementById('category-id').value;
+            categoriesManager.populateParentCategoryDropdown(currentCategoryId, null, e.target.value);
+        });
+
         // Recurring modal
         this.elements.addRecurringBtn?.addEventListener('click', () => recurringManager.showRecurringModal());
         this.elements.closeRecurringModalBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
@@ -172,6 +180,15 @@ const ui = {
         this.elements.recurringForm?.addEventListener('submit', (e) => {
             e.preventDefault();
             recurringManager.handleRecurringSubmit();
+        });
+
+        // Add event listeners for type changes to filter categories
+        this.elements.transactionTypeSelect?.addEventListener('change', (e) => {
+            this.populateCategorySelect(this.elements.categoriesForTransaction, e.target.value);
+        });
+
+        this.elements.recurringTypeSelect?.addEventListener('change', (e) => {
+            this.populateCategorySelect(document.getElementById('recurring-category'), e.target.value);
         });
     },
 
@@ -228,6 +245,12 @@ const ui = {
                 link.classList.remove('active');
             }
         });
+
+        if (this.elements.categoriesForTransaction) {
+            this.elements.categoriesForTransaction.innerHTML = '';
+            
+            this.populateCategorySelect(this.elements.categoriesForTransaction, 'expense'); // Default to expense
+        }
     },
 
     renderDashboard() {
@@ -236,6 +259,9 @@ const ui = {
         this.renderRecentTransactions();
         this.renderTransactionForm();
         this.updateDashboardSummary();
+
+        // Populate category dropdown on transaction form
+        this.populateCategorySelect(this.elements.categoriesForTransaction, this.elements.transactionTypeSelect.value);
     },
     
     renderAccountList() {
@@ -335,41 +361,6 @@ const ui = {
             </div>
         `;
         this.elements.categoriesList.appendChild(addCategoryItem);
-        
-        // Also update categories dropdown in transaction form
-        if (this.elements.categoriesForTransaction) {
-            this.elements.categoriesForTransaction.innerHTML = '';
-            
-            const renderCategoryOptions = (categories, level, group) => {
-                categories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category.id;
-                    option.textContent = `${'--'.repeat(level)} ${category.name}`;
-                    group.appendChild(option);
-
-                    const subCategories = db.categories.filter(c => c.parentId === category.id);
-                    if (subCategories.length > 0) {
-                        renderCategoryOptions(subCategories, level + 1, group);
-                    }
-                });
-            };
-
-            // Group categories by type
-            const incomeCategories = db.categories.filter(cat => cat.type === 'income' && !cat.parentId);
-            const expenseCategories = db.categories.filter(cat => cat.type === 'expense' && !cat.parentId);
-            
-            // Add income categories
-            const incomeGroup = document.createElement('optgroup');
-            incomeGroup.label = 'Income';
-            renderCategoryOptions(incomeCategories, 0, incomeGroup);
-            this.elements.categoriesForTransaction.appendChild(incomeGroup);
-            
-            // Add expense categories
-            const expenseGroup = document.createElement('optgroup');
-            expenseGroup.label = 'Expenses';
-            renderCategoryOptions(expenseCategories, 0, expenseGroup);
-            this.elements.categoriesForTransaction.appendChild(expenseGroup);
-        }
     },
     
     renderRecentTransactions() {
@@ -704,6 +695,31 @@ const ui = {
         this.renderDashboard();
         this.hideTransferModal();
         alert('Transfer successful!');
+    },
+
+    populateCategorySelect(selectElement, type) {
+        if (!selectElement) return;
+        selectElement.innerHTML = '';
+
+        const renderCategoryOptions = (categories, level, group) => {
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = `${'--'.repeat(level)} ${category.name}`;
+                group.appendChild(option);
+
+                const subCategories = db.categories.filter(c => c.parentId === category.id && c.type === type);
+                if (subCategories.length > 0) {
+                    renderCategoryOptions(subCategories, level + 1, group);
+                }
+            });
+        };
+        
+        const filteredCategories = db.categories.filter(cat => cat.type === type && !cat.parentId);
+        const group = document.createElement('optgroup');
+        group.label = type.charAt(0).toUpperCase() + type.slice(1);
+        renderCategoryOptions(filteredCategories, 0, group);
+        selectElement.appendChild(group);
     }
 };
 
@@ -766,7 +782,8 @@ const categoriesManager = {
         ui.elements.categoryForm.reset();
         document.getElementById('category-id').value = '';
         
-        this.populateParentCategoryDropdown();
+        const type = document.getElementById('category-type').value;
+        this.populateParentCategoryDropdown(null, null, type);
 
         modal.classList.add('active');
     },
@@ -788,22 +805,27 @@ const categoriesManager = {
         document.getElementById('category-modal-title').textContent = 'Edit Category';
         ui.elements.categoryForm.reset();
         
+        const typeSelect = document.getElementById('category-type');
+        const hasTransactions = db.transactions.some(t => t.categoryId === categoryId);
+        typeSelect.disabled = hasTransactions;
+        
         document.getElementById('category-id').value = category.id;
         document.getElementById('category-name').value = category.name;
-        document.getElementById('category-type').value = category.type;
+        typeSelect.value = category.type;
         document.getElementById('category-icon').value = category.icon;
         document.getElementById('category-color').value = category.color;
 
-        this.populateParentCategoryDropdown(category.id, category.parentId);
+        this.populateParentCategoryDropdown(category.id, category.parentId, category.type);
 
         modal.classList.add('active');
     },
 
-    populateParentCategoryDropdown(currentCategoryId = null, parentId = null) {
+    populateParentCategoryDropdown(currentCategoryId = null, parentId = null, type) {
         const parentSelect = document.getElementById('category-parent');
         parentSelect.innerHTML = '<option value="">None</option>'; // No parent option
         
-        const categories = db.categories.filter(c => c.id !== currentCategoryId && !c.parentId); // Prevent self-parenting and deep nesting for simplicity
+        // Filter parents by the selected type
+        const categories = db.categories.filter(c => c.id !== currentCategoryId && !c.parentId && c.type === type);
 
         const renderCategoryOptions = (categories, level) => {
             categories.forEach(category => {
@@ -929,7 +951,7 @@ const recurringManager = {
         document.getElementById('recurring-start-date').valueAsDate = new Date();
         
         // Populate categories and accounts
-        this.populateSelect('recurring-category', db.categories);
+        ui.populateCategorySelect(document.getElementById('recurring-category'), 'expense'); // Default to expense
         this.populateSelect('recurring-account', db.accounts);
 
         modal.classList.add('active');
@@ -951,6 +973,10 @@ const recurringManager = {
         document.getElementById('recurring-frequency').value = item.frequency;
         document.getElementById('recurring-start-date').value = item.startDate;
         document.getElementById('recurring-notes').value = item.notes;
+
+        // Repopulate dropdowns and set value
+        ui.populateCategorySelect(document.getElementById('recurring-category'), item.type);
+        document.getElementById('recurring-category').value = item.categoryId;
     },
 
     deleteRecurring(id) {
