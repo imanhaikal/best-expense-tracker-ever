@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Co-Pilot Finance | The Ultimate Expense Tracker</title>
     
     <!-- Icons -->
@@ -25,6 +25,26 @@
 </head>
 <body class="dark-mode">
     <div class="app-container">
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <div class="logo">
+                <i class="fas fa-wallet"></i>
+                <span>Co-Pilot Finance</span>
+            </div>
+            <div class="mobile-header-actions">
+                <div class="theme-switch-wrapper">
+                    <span><i class="fas fa-moon"></i></span>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="mobile-theme-switch">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button id="mobile-menu-toggle" class="touch-target">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -55,7 +75,7 @@
             <header>
                 <h1 id="page-title">Dashboard</h1>
                 <div class="header-actions">
-                    <div class="theme-switch-wrapper">
+                    <div class="theme-switch-wrapper hidden-mobile">
                         <span><i class="fas fa-moon"></i></span>
                         <label class="theme-switch">
                             <input type="checkbox" id="theme-switch">
@@ -64,7 +84,7 @@
                     </div>
                     
                     <button class="add-transaction-btn" id="add-transaction-btn">
-                        <i class="fas fa-plus"></i> New Transaction
+                        <i class="fas fa-plus"></i> <span>New Transaction</span>
                     </button>
                     
                     <div class="user-profile">
@@ -353,6 +373,28 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <div class="mobile-nav">
+            <nav>
+                <a href="#dashboard" class="nav-item active">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#transactions" class="nav-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transactions</span>
+                </a>
+                <a href="#accounts" class="nav-item">
+                    <i class="fas fa-university"></i>
+                    <span>Accounts</span>
+                </a>
+                <a href="#settings" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
         </div>
     </div>
 

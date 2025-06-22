@@ -116,6 +116,9 @@ const ui = {
         mainContent: document.querySelector('.main-content'),
         sidebarToggle: document.getElementById('sidebar-toggle'),
         themeSwitch: document.getElementById('theme-switch'),
+        mobileThemeSwitch: document.getElementById('mobile-theme-switch'),
+        mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
+        mobileNavItems: document.querySelectorAll('.mobile-nav .nav-item'),
         pages: document.querySelectorAll('.page'),
         navLinks: document.querySelectorAll('.nav-link'),
         transactionForm: document.getElementById('transaction-form'),
@@ -159,6 +162,7 @@ const ui = {
         this.setupTheme();
         this.renderDashboard();
         this.updateNavigationState();
+        this.setupMobileNavigation();
     },
 
     setupEventListeners() {
@@ -172,10 +176,59 @@ const ui = {
         this.elements.themeSwitch?.addEventListener('change', () => {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            
+            // Keep mobile theme switch in sync
+            if (this.elements.mobileThemeSwitch) {
+                this.elements.mobileThemeSwitch.checked = document.body.classList.contains('dark-mode');
+            }
+        });
+        
+        // Mobile Theme toggle
+        this.elements.mobileThemeSwitch?.addEventListener('change', () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            
+            // Keep desktop theme switch in sync
+            if (this.elements.themeSwitch) {
+                this.elements.themeSwitch.checked = document.body.classList.contains('dark-mode');
+            }
+        });
+        
+        // Mobile menu toggle
+        this.elements.mobileMenuToggle?.addEventListener('click', () => {
+            this.elements.sidebar.classList.toggle('mobile-visible');
+            this.elements.mobileMenuToggle.classList.toggle('active');
+            
+            // Change icon based on state
+            const icon = this.elements.mobileMenuToggle.querySelector('i');
+            if (icon) {
+                if (this.elements.sidebar.classList.contains('mobile-visible')) {
+                    icon.className = 'fas fa-times';
+                } else {
+                    icon.className = 'fas fa-bars';
+                }
+            }
         });
 
         // Navigation
         this.elements.navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetPage = link.getAttribute('href').substring(1); // Remove #
+                this.changePage(targetPage);
+                
+                // Hide sidebar on mobile when clicking a nav link
+                if (window.innerWidth <= 768) {
+                    this.elements.sidebar.classList.remove('mobile-visible');
+                    if (this.elements.mobileMenuToggle) {
+                        this.elements.mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+                    }
+                }
+            });
+        });
+        
+        // Mobile navigation
+        this.elements.mobileNavItems?.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetPage = link.getAttribute('href').substring(1); // Remove #
@@ -312,11 +365,14 @@ const ui = {
 
     setupTheme() {
         const darkMode = localStorage.getItem('darkMode') === 'true';
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-            if (this.elements.themeSwitch) {
-                this.elements.themeSwitch.checked = true;
-            }
+        document.body.classList.toggle('dark-mode', darkMode);
+        
+        if (this.elements.themeSwitch) {
+            this.elements.themeSwitch.checked = darkMode;
+        }
+        
+        if (this.elements.mobileThemeSwitch) {
+            this.elements.mobileThemeSwitch.checked = darkMode;
         }
         
         // Set the saved currency
@@ -327,58 +383,113 @@ const ui = {
     },
 
     changePage(pageId) {
+        // Update URL without reloading
+        window.location.hash = pageId;
+        
+        // Update page title
+        const pageTitle = document.getElementById('page-title');
+        if (pageTitle) {
+            switch (pageId) {
+                case 'dashboard': pageTitle.textContent = 'Dashboard'; break;
+                case 'transactions': pageTitle.textContent = 'Transactions'; break;
+                case 'accounts': pageTitle.textContent = 'Accounts'; break;
+                case 'categories': pageTitle.textContent = 'Categories'; break;
+                case 'budgets': pageTitle.textContent = 'Budgets'; break;
+                case 'recurring': pageTitle.textContent = 'Recurring Transactions'; break;
+                case 'reports': pageTitle.textContent = 'Reports'; break;
+                case 'settings': pageTitle.textContent = 'Settings'; break;
+                default: pageTitle.textContent = 'Dashboard';
+            }
+        }
+        
         // Hide all pages
-        this.elements.pages.forEach(page => {
-            page.classList.remove('active');
-        });
-
-        // Show requested page
-        const currentPage = document.getElementById(pageId + '-page');
-        if (currentPage) {
-            currentPage.classList.add('active');
+        this.elements.pages.forEach(page => page.classList.remove('active'));
+        
+        // Show target page
+        const targetPage = document.getElementById(pageId + '-page');
+        if (targetPage) {
+            targetPage.classList.add('active');
         }
-
-        if (pageId === 'recurring') recurringManager.renderRecurringList();
-        if (pageId === 'budgets') {
-            budgetManager.renderBudgetList();
-            budgetManager.populateCategorySelect();
-        }
-        if (pageId === 'reports') {
-            reportsManager.renderIncomeExpenseChart();
-        }
-
-        // Update navigation
+        
+        // Update navigation state
         this.updateNavigationState(pageId);
-
-        // Update dashboard summary
-        this.updateDashboardSummary();
+        
+        // Specific logic per page
+        if (pageId === 'transactions') {
+            this.renderTransactionForm();
+        } else if (pageId === 'dashboard') {
+            this.renderDashboard();
+        } else if (pageId === 'accounts') {
+            this.renderAccountList();
+        } else if (pageId === 'categories') {
+            this.renderCategoryList();
+        } else if (pageId === 'recurring') {
+            recurringManager.renderRecurringList();
+        } else if (pageId === 'budgets') {
+            budgetManager.renderBudgetList();
+        } else if (pageId === 'reports') {
+            reportsManager.initialize();
+        }
     },
 
     updateNavigationState(activePageId = null) {
-        if (!activePageId && this.elements.pages) {
-            // Find the visible page if none specified
-            const visiblePage = Array.from(this.elements.pages).find(page => 
-                page.classList.contains('active'));
-            
-            if (visiblePage) {
-                activePageId = visiblePage.id.replace('-page', '');
-            }
+        // If no activePageId was provided, get it from the URL
+        if (!activePageId) {
+            activePageId = window.location.hash.substring(1) || 'dashboard';
         }
-
-        // Update active navigation link
+        
+        // Desktop navigation
         this.elements.navLinks.forEach(link => {
-            const linkPage = link.getAttribute('href').substring(1); // Remove #
+            const linkPage = link.getAttribute('href').substring(1);
             if (linkPage === activePageId) {
                 link.classList.add('active');
             } else {
                 link.classList.remove('active');
             }
         });
-
-        if (this.elements.categoriesForTransaction) {
-            this.elements.categoriesForTransaction.innerHTML = '';
-            
-            this.populateCategorySelect(this.elements.categoriesForTransaction, 'expense'); // Default to expense
+        
+        // Mobile navigation
+        this.elements.mobileNavItems?.forEach(link => {
+            const linkPage = link.getAttribute('href').substring(1);
+            if (linkPage === activePageId) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    },
+    
+    setupMobileNavigation() {
+        // Add click event to document to close sidebar when clicking outside
+        document.addEventListener('click', (event) => {
+            // Check if sidebar is visible and click is outside sidebar
+            if (window.innerWidth <= 768 && 
+                this.elements.sidebar.classList.contains('mobile-visible') &&
+                !this.elements.sidebar.contains(event.target) &&
+                event.target !== this.elements.mobileMenuToggle &&
+                !this.elements.mobileMenuToggle.contains(event.target)) {
+                
+                this.elements.sidebar.classList.remove('mobile-visible');
+                if (this.elements.mobileMenuToggle) {
+                    this.elements.mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+                }
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', this.handleResize.bind(this));
+        // Initial call for setting up correct state
+        this.handleResize();
+    },
+    
+    handleResize() {
+        if (window.innerWidth > 768) {
+            // Reset any mobile-specific states when returning to desktop
+            this.elements.sidebar.classList.remove('mobile-visible');
+            this.elements.mainContent.classList.remove('mobile-content');
+            if (this.elements.mobileMenuToggle) {
+                this.elements.mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+            }
         }
     },
 
@@ -1644,32 +1755,14 @@ const reportsManager = {
     }
 };
 
-// Initialize app when DOM is loaded
+// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Add a transfer category if it doesn't exist
-    if (!db.categories.some(cat => cat.id === 'cat_transfer')) {
-        db.categories.push({
-            id: 'cat_transfer',
-            name: 'Transfer',
-            icon: 'fa-exchange-alt',
-            color: '#888',
-            type: 'internal' // Special type to exclude from income/expense reports
-        });
-    }
-
-    // Load data from local storage
     db.load();
-    
-    // Process recurring transactions
-    recurringManager.processRecurringTransactions();
-
-    // Initialize UI
     ui.initialize();
-    reportsManager.initialize();
     
-    // Set default date in transaction form to today
-    const dateInput = document.getElementById('transaction-date');
-    if (dateInput) {
-        dateInput.valueAsDate = new Date();
+    // Handle direct links to pages from URL hash
+    if (window.location.hash) {
+        const pageId = window.location.hash.substring(1);
+        ui.changePage(pageId);
     }
 }); 
