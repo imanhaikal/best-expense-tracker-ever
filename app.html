@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Co-Pilot Finance | The Ultimate Expense Tracker</title>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="public/css/style.css">
+
+    <style>
+        /* All styles are in external CSS file: public/css/style.css */
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="app-container">
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <div class="logo">
+                <i class="fas fa-wallet"></i>
+                <span>Co-Pilot Finance</span>
+            </div>
+            <div class="mobile-header-actions">
+                <div class="theme-switch-wrapper">
+                    <span><i class="fas fa-moon"></i></span>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="mobile-theme-switch">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button id="mobile-menu-toggle" class="touch-target">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon"><a href="/index.html" style="color: var(--primary-color); text-decoration: none;"><i class="fas fa-wallet"></i></a></div>
+                <div class="logo-text">Co-Pilot Finance</div>
+            </div>
+            
+            <nav>
+                <ul>
+                    <li><a href="#dashboard" class="nav-link active"><i class="fas fa-chart-pie"></i> <span class="nav-text">Dashboard</span></a></li>
+                    <li><a href="#transactions" class="nav-link"><i class="fas fa-exchange-alt"></i> <span class="nav-text">Transactions</span></a></li>
+                    <li><a href="#accounts" class="nav-link"><i class="fas fa-university"></i> <span class="nav-text">Accounts</span></a></li>
+                    <li><a href="#categories" class="nav-link"><i class="fas fa-tags"></i> <span class="nav-text">Categories</span></a></li>
+                    <li><a href="#budgets" class="nav-link"><i class="fas fa-bullseye"></i> <span class="nav-text">Budgets</span></a></li>
+                    <li><a href="#recurring" class="nav-link"><i class="fas fa-sync-alt"></i> <span class="nav-text">Recurring</span></a></li>
+                    <li><a href="#reports" class="nav-link"><i class="fas fa-chart-bar"></i> <span class="nav-text">Reports</span></a></li>
+                    <li><a href="#settings" class="nav-link"><i class="fas fa-cog"></i> <span class="nav-text">Settings</span></a></li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="sidebar-toggle"><i class="fas fa-chevron-left"></i></button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content" id="main-content">
+            <header>
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-actions">
+                    <div class="theme-switch-wrapper hidden-mobile">
+                        <span><i class="fas fa-moon"></i></span>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="theme-switch">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <button class="add-transaction-btn" id="add-transaction-btn">
+                        <i class="fas fa-plus"></i> <span>New Transaction</span>
+                    </button>
+                    
+                    <div class="user-profile">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Profile">
+                        <div class="user-name">John Smith</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <div class="page active" id="dashboard-page">
+                <div class="dashboard-grid">
+                    <!-- Total Balance Widget -->
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3>Total Balance</h3>
+                            <div><i class="fas fa-wallet"></i></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="value" id="total-balance">$50.00</div>
+                            <div class="trend positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+2.5% from last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Income Widget -->
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3>Monthly Income</h3>
+                            <div><i class="fas fa-arrow-down"></i></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="value" id="monthly-income">$0.00</div>
+                            <div class="trend positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+5.3% from last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Expenses Widget -->
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3>Monthly Expenses</h3>
+                            <div><i class="fas fa-arrow-up"></i></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="value" id="monthly-expenses">$0.00</div>
+                            <div class="trend negative">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+1.2% from last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Spending Chart Widget (Double Width) -->
+                    <div class="widget" style="grid-column: span 3;">
+                        <div class="widget-header">
+                            <h3>Spending by Category</h3>
+                            <div><i class="fas fa-chart-pie"></i></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="chart-widget-container">
+                                <canvas id="spending-chart"></canvas>
+                                <div id="spending-chart-center-text">
+                                    <div id="spending-chart-total">$0.00</div>
+                                    <div id="spending-chart-label">Monthly Spending</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Transactions -->
+                <!-- This section has been removed to match the updated design -->
+            </div>
+            
+            <!-- Transactions Page -->
+            <div class="page" id="transactions-page">
+                <div class="form-container">
+                    <h2 class="form-title">Add New Transaction</h2>
+                    <form id="transaction-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="transaction-type">Transaction Type</label>
+                                <select id="transaction-type" name="transaction-type" required>
+                                    <option value="income">Income</option>
+                                    <option value="expense">Expense</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="transaction-amount">Amount</label>
+                                <input type="number" step="0.01" min="0.01" id="transaction-amount" name="transaction-amount" placeholder="0.00" required>
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="transaction-date">Date</label>
+                                <input type="date" id="transaction-date" name="transaction-date" required>
+                                <div class="error-message"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="transaction-payee">Payee/Merchant</label>
+                                <input type="text" id="transaction-payee" name="transaction-payee" placeholder="Enter payee or merchant name" required>
+                                <div class="error-message"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="transaction-category">Category</label>
+                                <select id="transaction-category" name="transaction-category" required>
+                                    <!-- Categories will be dynamically populated -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="transaction-account">Account</label>
+                                <select id="transaction-account" name="transaction-account" required>
+                                    <!-- Accounts will be dynamically populated -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="transaction-notes">Notes (Optional)</label>
+                            <textarea id="transaction-notes" name="transaction-notes" rows="3" placeholder="Add any additional details..."></textarea>
+                        </div>
+                        
+                        <div class="btn-container">
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='#dashboard'">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Transaction</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="table-container">
+                    <div class="widget-header">
+                        <h3>All Transactions</h3>
+                        <div><i class="fas fa-list"></i></div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Payee</th>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Account</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-transactions">
+                            <!-- Transactions will be added dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Accounts Page -->
+            <div class="page" id="accounts-page">
+                <div class="widget-header">
+                    <h2 class="page-title">Manage Your Accounts</h2>
+                    <button class="btn btn-primary" id="transfer-money-btn"><i class="fas fa-exchange-alt"></i> Transfer Money</button>
+                </div>
+                <div class="accounts-grid" id="accounts-list">
+                    <!-- Account cards will be added dynamically -->
+                </div>
+            </div>
+            
+            <!-- Categories Page -->
+            <div class="page" id="categories-page">
+                <h2 class="page-title">Manage Your Categories</h2>
+                <div class="category-list" id="categories-list">
+                    <!-- Categories will be added dynamically -->
+                </div>
+            </div>
+            
+            <!-- Budgets Page -->
+            <div class="page" id="budgets-page">
+                <h2 class="page-title">Monthly Budget</h2>
+                <p>Set up and manage your monthly budgets to keep your spending in check.</p>
+                
+                <div class="form-container">
+                    <h2 class="form-title">Add New Budget</h2>
+                    <form id="budget-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="budget-category">Category</label>
+                                <select id="budget-category" name="budget-category" required>
+                                    <!-- Categories will be dynamically populated -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="budget-amount">Budget Amount</label>
+                                <input type="number" step="0.01" min="0.01" id="budget-amount" name="budget-amount" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        
+                        <div class="btn-container">
+                            <button type="submit" class="btn btn-primary">Save Budget</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="budget-list" id="budget-list">
+                    <!-- Budget progress bars will be added dynamically -->
+                </div>
+            </div>
+            
+            <!-- Recurring Transactions Page -->
+            <div class="page" id="recurring-page">
+                <div class="widget-header">
+                    <h2 class="page-title">Recurring Transactions</h2>
+                    <button class="btn btn-primary" id="add-recurring-btn"><i class="fas fa-plus"></i> New Recurring Transaction</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Payee</th>
+                                <th>Amount</th>
+                                <th>Frequency</th>
+                                <th>Next Date</th>
+                                <th>Account</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recurring-transactions-list">
+                            <!-- Recurring transactions will be listed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Reports Page -->
+            <div class="page" id="reports-page">
+                <h2 class="page-title">Financial Reports</h2>
+                <p>Detailed reports and insights about your financial data.</p>
+                
+                <!-- This would be expanded with charts and reports -->
+                <div class="widget">
+                    <div class="widget-header">
+                        <h3>Income vs. Expenses</h3>
+                    </div>
+                    <div class="widget-content">
+                        <div style="height: 300px;">
+                            <canvas id="income-expense-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Page -->
+            <div class="page" id="settings-page">
+                <h2 class="page-title">User Settings</h2>
+                <p>Customize your expense tracker experience.</p>
+                
+                <div class="form-container">
+                    <h3>Display Settings</h3>
+                    <div class="form-group">
+                        <label for="currency-setting">Default Currency</label>
+                        <select id="currency-setting" name="currency-setting">
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="GBP">GBP (£)</option>
+                            <option value="JPY">JPY (¥)</option>
+                            <option value="MYR">MYR (RM)</option>
+                        </select>
+                    </div>
+                    
+                    <h3>Account Settings</h3>
+                    <div class="form-group">
+                        <label for="user-name">Your Name</label>
+                        <input type="text" id="user-name" name="user-name" value="John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Your Email</label>
+                        <input type="email" id="user-email" name="user-email" value="john.smith@example.com">
+                    </div>
+                    
+                    <div class="btn-container">
+                        <button type="button" class="btn btn-primary">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <div class="mobile-nav">
+            <nav>
+                <a href="#dashboard" class="nav-item active">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#transactions" class="nav-item">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transactions</span>
+                </a>
+                <a href="#accounts" class="nav-item">
+                    <i class="fas fa-university"></i>
+                    <span>Accounts</span>
+                </a>
+                <a href="#settings" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Transfer Money Modal -->
+    <div class="modal-backdrop" id="transfer-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">Transfer Money</h3>
+                <button class="modal-close" id="close-transfer-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="transfer-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="transfer-from-account">From Account</label>
+                            <select id="transfer-from-account" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="transfer-to-account">To Account</label>
+                            <select id="transfer-to-account" required></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="transfer-amount">Amount</label>
+                        <input type="number" step="0.01" min="0.01" id="transfer-amount" placeholder="0.00" required>
+                        <div class="error-message"></div>
+                    </div>
+                     <div class="form-group">
+                        <label for="transfer-date">Date</label>
+                        <input type="date" id="transfer-date" required>
+                        <div class="error-message"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="transfer-notes">Notes (Optional)</label>
+                        <textarea id="transfer-notes" rows="3" placeholder="Add any additional details..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-transfer-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="transfer-form">Confirm Transfer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="modal-backdrop" id="category-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="category-modal-title">Add Category</h3>
+                <button class="modal-close" id="close-category-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="category-form">
+                    <input type="hidden" id="category-id">
+                    <div class="form-group">
+                        <label for="category-name">Category Name</label>
+                        <input type="text" id="category-name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category-type">Type</label>
+                            <select id="category-type" required>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                         <div class="form-group">
+                            <label for="category-parent">Parent Category (Optional)</label>
+                            <select id="category-parent"></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category-icon">Icon</label>
+                            <input type="text" id="category-icon" placeholder="e.g., fa-shopping-bag">
+                        </div>
+                        <div class="form-group">
+                            <label for="category-color">Color</label>
+                            <input type="color" id="category-color" value="#FF6B6B">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-category-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="category-form" id="save-category-btn">Save Category</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recurring Transaction Modal -->
+    <div class="modal-backdrop" id="recurring-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="recurring-modal-title">Add Recurring Transaction</h3>
+                <button class="modal-close" id="close-recurring-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="recurring-form">
+                    <input type="hidden" id="recurring-id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recurring-type">Type</label>
+                            <select id="recurring-type" required>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recurring-amount">Amount</label>
+                            <input type="number" step="0.01" min="0.01" id="recurring-amount" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="recurring-payee">Payee/Merchant</label>
+                        <input type="text" id="recurring-payee" placeholder="e.g., Netflix, Salary" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recurring-category">Category</label>
+                            <select id="recurring-category" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recurring-account">Account</label>
+                            <select id="recurring-account" required></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                         <div class="form-group">
+                            <label for="recurring-frequency">Frequency</label>
+                            <select id="recurring-frequency" required>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recurring-start-date">Start Date</label>
+                            <input type="date" id="recurring-start-date" required>
+                        </div>
+                    </div>
+                     <div class="form-group">
+                        <label for="recurring-notes">Notes (Optional)</label>
+                        <textarea id="recurring-notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-recurring-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="recurring-form">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-backdrop" id="confirmation-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirmation-modal-title">Are you sure?</h3>
+                <button class="modal-close" id="close-confirmation-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmation-modal-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-confirmation-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-confirmation-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reassignment Modal -->
+    <div class="modal-backdrop" id="reassign-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="reassign-modal-title">Reassign & Delete</h3>
+                <button class="modal-close" id="close-reassign-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="reassign-modal-message"></p>
+                <div class="form-group">
+                    <label for="reassign-select">Reassign to:</label>
+                    <select id="reassign-select"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-reassign-btn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-reassign-btn">Reassign & Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Modal -->
+    <div class="modal-backdrop" id="account-modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title" id="account-modal-title">Add Account</h3>
+                <button class="modal-close" id="close-account-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="account-form">
+                    <input type="hidden" id="account-id">
+                    <div class="form-group">
+                        <label for="account-name">Account Name</label>
+                        <input type="text" id="account-name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="account-type">Account Type</label>
+                            <select id="account-type" required>
+                                <option value="checking">Checking</option>
+                                <option value="savings">Savings</option>
+                                <option value="credit">Credit Card</option>
+                                <option value="cash">Cash</option>
+                                <option value="investment">Investment</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="account-balance">Starting Balance</label>
+                            <input type="number" step="0.01" id="account-balance" value="0.00" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="account-icon">Icon</label>
+                        <input type="text" id="account-icon" value="fa-wallet" placeholder="e.g., fa-university">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-account-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="account-form">Save Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore-compat.js" onload="console.log('Firebase SDK loaded')"></script>
+
+    <!-- Custom JS -->
+    <script src="public/js/app.js"></script>
+</body>
+</html>

@@ -22,11 +22,12 @@ A beautiful, feature-rich expense tracker web application built with HTML, CSS, 
    ```
    npm install
    ```
-3. Open the `index.html` file in a web browser or use a local server:
+3. Open the `index.html` file in your browser to see the landing page.
+4. Click "Go to App" or navigate to `app.html` directly in your browser. Or use a local server:
    ```
    python -m http.server 8000
    ```
-4. Access the application at http://localhost:8000
+5. Access the application at http://localhost:8000/app.html
 
 ## Firebase Setup (Optional)
 

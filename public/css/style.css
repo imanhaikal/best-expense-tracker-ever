@@ -7,13 +7,13 @@
     --warning-color: #f59e0b;
     
     --bg-color: #f0f2f5;
-    --sidebar-bg: #ffffff;
-    --widget-bg: #ffffff;
+    --sidebar-bg: rgba(255, 255, 255, 0.8);
+    --widget-bg: rgba(255, 255, 255, 0.7);
     --text-color: #1f2937;
     --text-muted-color: #6b7280;
     --border-color: rgba(0, 0, 0, 0.07);
     --shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.1);
-    --backdrop-blur: blur(20px);
+    --backdrop-blur: blur(12px);
     --sidebar-width: 280px;
     --sidebar-width-collapsed: 90px;
     --mobile-header-height: 60px;
@@ -24,12 +24,27 @@
     --primary-gradient: linear-gradient(135deg, #7f5bff 0%, #6c47ff 100%);
     --primary-color: #7f5bff;
     --bg-color: #0f172a;
-    --sidebar-bg: #1e293b;
-    --widget-bg: #1e293b;
+    --sidebar-bg: rgba(30, 41, 59, 0.75);
+    --widget-bg: rgba(30, 41, 59, 0.6);
     --text-color: #e2e8f0;
     --text-muted-color: #94a3b8;
     --border-color: rgba(255, 255, 255, 0.08);
     --shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+.dark-mode::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
 }
 
 /* --- Basic Reset --- */
@@ -81,6 +96,8 @@ body::before { /* Subtle background gradient */
     position: fixed;
     height: 100%;
     z-index: 1000;
+    backdrop-filter: var(--backdrop-blur);
+    -webkit-backdrop-filter: var(--backdrop-blur);
 }
 
 .sidebar.collapsed { width: var(--sidebar-width-collapsed); }
@@ -133,6 +150,7 @@ body::before { /* Subtle background gradient */
 .sidebar nav ul li a:hover {
     color: var(--text-color);
     background: rgba(128, 139, 249, 0.1);
+    transform: translateX(5px);
 }
 
 .sidebar nav ul li a.active {
@@ -396,21 +414,24 @@ input:checked + .slider:before {
 
 .widget {
     background: var(--widget-bg);
-    border-radius: 16px;
     padding: 25px;
+    border-radius: 20px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    animation: slideUpFadeIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    transition: all 0.4s ease;
+    animation: slideUpFadeIn 0.5s ease-out forwards;
     opacity: 0;
-    transform: translateY(20px);
+    backdrop-filter: var(--backdrop-blur);
+    -webkit-backdrop-filter: var(--backdrop-blur);
 }
 
 .widget:hover { 
-    transform: translateY(15px);
-    box-shadow: 0 15px 35px -15px rgba(0, 0, 0, 0.5);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.15);
 }
 
 @keyframes slideUpFadeIn { 
+    from { opacity: 0; transform: translateY(20px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
 

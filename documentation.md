@@ -41,9 +41,9 @@ The application uses local storage by default to persist data on the user's devi
      ```bash
      python -m http.server 8000
      ```
-   - Or simply open `index.html` in your browser
+   - Or simply open `index.html` in your browser for the landing page, then navigate to `app.html` for the application.
 
-4. Access the application at http://localhost:8000 (if using a local server)
+4. Access the application at http://localhost:8000/app.html (if using a local server)
 
 ### Firebase Integration (Optional)
 1. Create a project in the [Firebase Console](https://console.firebase.google.com/)
@@ -65,7 +65,8 @@ The application uses local storage by default to persist data on the user's devi
 
 ```
 best-expense-tracker-ever/
-├── index.html             # Main HTML file
+├── index.html             # Landing page HTML file
+├── app.html               # Main application HTML file
 ├── package.json           # Dependencies and project metadata
 ├── package-lock.json      # Locked dependencies
 ├── public/                # Public assets
