@@ -1,3 +1,27 @@
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAg91kmj2wI_Jw0k-D64uXaB-9fe8XltSo",
+  authDomain: "iman-expense-tracker.firebaseapp.com",
+  projectId: "iman-expense-tracker",
+  storageBucket: "iman-expense-tracker.firebasestorage.app",
+  messagingSenderId: "1026441603962",
+  appId: "1:1026441603962:web:e0156e94708f8c2625c4c3"
+};
+
+// Initialize Firebase - only if Firebase is available
+let firestore;
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    firestore = firebase.firestore();
+    console.log("Firebase initialized successfully");
+  } else {
+    console.warn("Firebase SDK not available");
+  }
+} catch (error) {
+  console.error("Error initializing Firebase:", error);
+}
+
 // Expense Tracker Application
 
 // Currency Formatting Utility
@@ -158,209 +182,218 @@ const ui = {
     },
 
     initialize() {
+        console.log("UI initialization started");
         this.setupEventListeners();
         this.setupTheme();
         this.renderDashboard();
         this.updateNavigationState();
         this.setupMobileNavigation();
+        console.log("UI initialization completed");
     },
 
     setupEventListeners() {
-        // Sidebar toggle
-        this.elements.sidebarToggle?.addEventListener('click', () => {
-            this.elements.sidebar.classList.toggle('collapsed');
-            this.elements.mainContent.classList.toggle('collapsed');
-        });
-
-        // Theme toggle
-        this.elements.themeSwitch?.addEventListener('change', () => {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-            
-            // Keep mobile theme switch in sync
-            if (this.elements.mobileThemeSwitch) {
-                this.elements.mobileThemeSwitch.checked = document.body.classList.contains('dark-mode');
-            }
-        });
-        
-        // Mobile Theme toggle
-        this.elements.mobileThemeSwitch?.addEventListener('change', () => {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-            
-            // Keep desktop theme switch in sync
-            if (this.elements.themeSwitch) {
-                this.elements.themeSwitch.checked = document.body.classList.contains('dark-mode');
-            }
-        });
-        
-        // Mobile menu toggle
-        this.elements.mobileMenuToggle?.addEventListener('click', () => {
-            this.elements.sidebar.classList.toggle('mobile-visible');
-            this.elements.mobileMenuToggle.classList.toggle('active');
-            
-            // Change icon based on state
-            const icon = this.elements.mobileMenuToggle.querySelector('i');
-            if (icon) {
-                if (this.elements.sidebar.classList.contains('mobile-visible')) {
-                    icon.className = 'fas fa-times';
-                } else {
-                    icon.className = 'fas fa-bars';
-                }
-            }
-        });
-
-        // Navigation
-        this.elements.navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetPage = link.getAttribute('href').substring(1); // Remove #
-                this.changePage(targetPage);
+        console.log("Setting up event listeners");
+        try {
+            // Sidebar toggle
+            this.elements.sidebarToggle?.addEventListener('click', () => {
+                this.elements.sidebar.classList.toggle('collapsed');
+                this.elements.mainContent.classList.toggle('collapsed');
+            });
+    
+            // Theme toggle
+            this.elements.themeSwitch?.addEventListener('change', () => {
+                document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
                 
-                // Hide sidebar on mobile when clicking a nav link
-                if (window.innerWidth <= 768) {
-                    this.elements.sidebar.classList.remove('mobile-visible');
-                    if (this.elements.mobileMenuToggle) {
-                        this.elements.mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+                // Keep mobile theme switch in sync
+                if (this.elements.mobileThemeSwitch) {
+                    this.elements.mobileThemeSwitch.checked = document.body.classList.contains('dark-mode');
+                }
+            });
+            
+            // Mobile Theme toggle
+            this.elements.mobileThemeSwitch?.addEventListener('change', () => {
+                document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+                
+                // Keep desktop theme switch in sync
+                if (this.elements.themeSwitch) {
+                    this.elements.themeSwitch.checked = document.body.classList.contains('dark-mode');
+                }
+            });
+            
+            // Mobile menu toggle
+            this.elements.mobileMenuToggle?.addEventListener('click', () => {
+                this.elements.sidebar.classList.toggle('mobile-visible');
+                this.elements.mobileMenuToggle.classList.toggle('active');
+                
+                // Change icon based on state
+                const icon = this.elements.mobileMenuToggle.querySelector('i');
+                if (icon) {
+                    if (this.elements.sidebar.classList.contains('mobile-visible')) {
+                        icon.className = 'fas fa-times';
+                    } else {
+                        icon.className = 'fas fa-bars';
                     }
                 }
             });
-        });
-        
-        // Mobile navigation
-        this.elements.mobileNavItems?.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetPage = link.getAttribute('href').substring(1); // Remove #
-                this.changePage(targetPage);
+    
+            // Navigation
+            this.elements.navLinks?.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetPage = link.getAttribute('href').substring(1); // Remove #
+                    this.changePage(targetPage);
+                    
+                    // Hide sidebar on mobile when clicking a nav link
+                    if (window.innerWidth <= 768) {
+                        this.elements.sidebar.classList.remove('mobile-visible');
+                        if (this.elements.mobileMenuToggle) {
+                            this.elements.mobileMenuToggle.querySelector('i').className = 'fas fa-bars';
+                        }
+                    }
+                });
             });
-        });
-
-        // Transaction form
-        this.elements.transactionForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleTransactionSubmit();
-        });
-
-        // Add transaction button
-        this.elements.addTransactionBtn?.addEventListener('click', () => {
-            this.changePage('transactions');
-        });
-
-        // Transfer money button
-        this.elements.transferMoneyBtn?.addEventListener('click', () => {
-            this.showTransferModal();
-        });
-
-        // Close transfer modal
-        this.elements.closeTransferModalBtn?.addEventListener('click', () => {
-            this.hideTransferModal();
-        });
-        this.elements.cancelTransferBtn?.addEventListener('click', () => {
-            this.hideTransferModal();
-        });
-
-        // Transfer form submission
-        this.elements.transferForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleTransferSubmit();
-        });
-
-        // Category modal
-        this.elements.closeCategoryModalBtn?.addEventListener('click', () => categoriesManager.hideCategoryModal());
-        this.elements.cancelCategoryBtn?.addEventListener('click', () => categoriesManager.hideCategoryModal());
-        this.elements.categoryForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            categoriesManager.handleCategorySubmit();
-        });
-
-        this.elements.categoryTypeSelect?.addEventListener('change', (e) => {
-            const currentCategoryId = document.getElementById('category-id').value;
-            categoriesManager.populateParentCategoryDropdown(currentCategoryId, null, e.target.value);
-        });
-
-        // Recurring modal
-        this.elements.addRecurringBtn?.addEventListener('click', () => recurringManager.showRecurringModal());
-        this.elements.closeRecurringModalBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
-        this.elements.cancelRecurringBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
-        this.elements.recurringForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            recurringManager.handleRecurringSubmit();
-        });
-
-        // Add event listeners for type changes to filter categories
-        this.elements.transactionTypeSelect?.addEventListener('change', (e) => {
-            this.populateCategorySelect(this.elements.categoriesForTransaction, e.target.value);
-        });
-
-        this.elements.recurringTypeSelect?.addEventListener('change', (e) => {
-            this.populateCategorySelect(document.getElementById('recurring-category'), e.target.value);
-        });
-
-        // Add event listener for transfer from account change
-        this.elements.transferFromAccountSelect?.addEventListener('change', (e) => {
-            const fromAccountId = e.target.value;
-            const toAccountSelect = document.getElementById('transfer-to-account');
-            const currentToId = toAccountSelect.value;
             
-            toAccountSelect.innerHTML = '';
-            db.accounts.forEach(account => {
-                if (account.id !== fromAccountId) {
-                    const option = document.createElement('option');
-                    option.value = account.id;
-                    option.textContent = `${account.name} (${currencyFormatter.format(account.balance)})`;
-                    toAccountSelect.appendChild(option);
+            // Mobile navigation
+            this.elements.mobileNavItems?.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetPage = link.getAttribute('href').substring(1); // Remove #
+                    this.changePage(targetPage);
+                });
+            });
+            
+            // Transaction form
+            this.elements.transactionForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleTransactionSubmit();
+            });
+    
+            // Add transaction button
+            this.elements.addTransactionBtn?.addEventListener('click', () => {
+                this.changePage('transactions');
+            });
+    
+            // Transfer money button
+            this.elements.transferMoneyBtn?.addEventListener('click', () => {
+                this.showTransferModal();
+            });
+    
+            // Close transfer modal
+            this.elements.closeTransferModalBtn?.addEventListener('click', () => {
+                this.hideTransferModal();
+            });
+            this.elements.cancelTransferBtn?.addEventListener('click', () => {
+                this.hideTransferModal();
+            });
+    
+            // Transfer form submission
+            this.elements.transferForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleTransferSubmit();
+            });
+    
+            // Category modal
+            this.elements.closeCategoryModalBtn?.addEventListener('click', () => categoriesManager.hideCategoryModal());
+            this.elements.cancelCategoryBtn?.addEventListener('click', () => categoriesManager.hideCategoryModal());
+            this.elements.categoryForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                categoriesManager.handleCategorySubmit();
+            });
+    
+            this.elements.categoryTypeSelect?.addEventListener('change', (e) => {
+                const currentCategoryId = document.getElementById('category-id').value;
+                categoriesManager.populateParentCategoryDropdown(currentCategoryId, null, e.target.value);
+            });
+    
+            // Recurring modal
+            this.elements.addRecurringBtn?.addEventListener('click', () => recurringManager.showRecurringModal());
+            this.elements.closeRecurringModalBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
+            this.elements.cancelRecurringBtn?.addEventListener('click', () => recurringManager.hideRecurringModal());
+            this.elements.recurringForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                recurringManager.handleRecurringSubmit();
+            });
+    
+            // Add event listeners for type changes to filter categories
+            this.elements.transactionTypeSelect?.addEventListener('change', (e) => {
+                this.populateCategorySelect(this.elements.categoriesForTransaction, e.target.value);
+            });
+    
+            this.elements.recurringTypeSelect?.addEventListener('change', (e) => {
+                this.populateCategorySelect(document.getElementById('recurring-category'), e.target.value);
+            });
+    
+            // Add event listener for transfer from account change
+            this.elements.transferFromAccountSelect?.addEventListener('change', (e) => {
+                const fromAccountId = e.target.value;
+                const toAccountSelect = document.getElementById('transfer-to-account');
+                const currentToId = toAccountSelect.value;
+                
+                toAccountSelect.innerHTML = '';
+                db.accounts.forEach(account => {
+                    if (account.id !== fromAccountId) {
+                        const option = document.createElement('option');
+                        option.value = account.id;
+                        option.textContent = `${account.name} (${currencyFormatter.format(account.balance)})`;
+                        toAccountSelect.appendChild(option);
+                    }
+                });
+    
+                // If the previously selected 'to' account is still valid, re-select it
+                if (currentToId && currentToId !== fromAccountId) {
+                    toAccountSelect.value = currentToId;
                 }
             });
-
-            // If the previously selected 'to' account is still valid, re-select it
-            if (currentToId && currentToId !== fromAccountId) {
-                toAccountSelect.value = currentToId;
-            }
-        });
-
-        // Save settings button
-        this.elements.saveSettingsBtn?.addEventListener('click', (e) => {
-            const btn = e.target;
-            const originalText = btn.textContent;
-            btn.textContent = 'Saving...';
-            btn.disabled = true;
-
-            setTimeout(() => {
-                // Save the selected currency to localStorage
-                const selectedCurrency = document.getElementById('currency-setting').value;
-                localStorage.setItem('selectedCurrency', selectedCurrency);
-                
-                // Here you would normally save the settings to a backend
-                ui.showToast('Settings saved successfully!', 'success');
-                btn.textContent = originalText;
-                btn.disabled = false;
-                
-                // Update UI with the new currency
-                ui.renderDashboard();
-            }, 1000);
-        });
-
-        // Account Modal Listeners
-        this.elements.accountModalBackdrop?.addEventListener('click', (e) => {
-            if (e.target === this.elements.accountModalBackdrop) {
-                accountsManager.hideAccountModal();
-            }
-        });
-        this.elements.accountForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            accountsManager.handleAccountSubmit();
-        });
-        const closeAccountModalBtn = this.elements.accountModalBackdrop?.querySelector('#close-account-modal');
-        closeAccountModalBtn?.addEventListener('click', () => accountsManager.hideAccountModal());
-        const cancelAccountBtn = this.elements.accountModalBackdrop?.querySelector('#cancel-account-btn');
-        cancelAccountBtn?.addEventListener('click', () => accountsManager.hideAccountModal());
-
-        // Budget Form
-        this.elements.budgetForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            budgetManager.handleBudgetSubmit();
-        });
+    
+            // Save settings button
+            this.elements.saveSettingsBtn?.addEventListener('click', (e) => {
+                const btn = e.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Saving...';
+                btn.disabled = true;
+    
+                setTimeout(() => {
+                    // Save the selected currency to localStorage
+                    const selectedCurrency = document.getElementById('currency-setting').value;
+                    localStorage.setItem('selectedCurrency', selectedCurrency);
+                    
+                    // Here you would normally save the settings to a backend
+                    ui.showToast('Settings saved successfully!', 'success');
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    
+                    // Update UI with the new currency
+                    ui.renderDashboard();
+                }, 1000);
+            });
+    
+            // Account Modal Listeners
+            this.elements.accountModalBackdrop?.addEventListener('click', (e) => {
+                if (e.target === this.elements.accountModalBackdrop) {
+                    accountsManager.hideAccountModal();
+                }
+            });
+            this.elements.accountForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                accountsManager.handleAccountSubmit();
+            });
+            const closeAccountModalBtn = this.elements.accountModalBackdrop?.querySelector('#close-account-modal');
+            closeAccountModalBtn?.addEventListener('click', () => accountsManager.hideAccountModal());
+            const cancelAccountBtn = this.elements.accountModalBackdrop?.querySelector('#cancel-account-btn');
+            cancelAccountBtn?.addEventListener('click', () => accountsManager.hideAccountModal());
+    
+            // Budget Form
+            this.elements.budgetForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                budgetManager.handleBudgetSubmit();
+            });
+            
+            console.log("Event listeners setup completed");
+        } catch (error) {
+            console.error("Error setting up event listeners:", error);
+        }
     },
 
     setupTheme() {
@@ -1113,6 +1146,51 @@ const ui = {
         });
 
         return isValid;
+    },
+
+    processRecurringTransactions() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        db.recurring.forEach(item => {
+            let nextDate = new Date(item.nextDate);
+            nextDate.setHours(0, 0, 0, 0);
+
+            while (nextDate <= today) {
+                // Create the transaction
+                const transactionAmount = item.type === 'expense' ? -Math.abs(item.amount) : Math.abs(item.amount);
+                const newTransaction = {
+                    id: 'txn_' + Date.now() + Math.random(),
+                    type: item.type,
+                    amount: transactionAmount,
+                    date: new Date(nextDate).toISOString().split('T')[0],
+                    payee: item.payee,
+                    categoryId: item.categoryId,
+                    accountId: item.accountId,
+                    notes: `(Recurring) ${item.notes || ''}`
+                };
+                db.transactions.push(newTransaction);
+                accountsManager.updateBalance(item.accountId, transactionAmount);
+
+                // Calculate the next date
+                switch (item.frequency) {
+                    case 'daily':
+                        nextDate.setDate(nextDate.getDate() + 1);
+                        break;
+                    case 'weekly':
+                        nextDate.setDate(nextDate.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                        break;
+                    case 'yearly':
+                        nextDate.setFullYear(nextDate.getFullYear() + 1);
+                        break;
+                }
+            }
+            item.nextDate = new Date(nextDate).toISOString().split('T')[0];
+        });
+        db.save();
     }
 };
 
@@ -1755,14 +1833,23 @@ const reportsManager = {
     }
 };
 
-// Initialize app when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+// Make sure the DOM is fully loaded before initializing the UI
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded");
+    // Load data from localStorage
     db.load();
+    
+    // Initialize UI
     ui.initialize();
+    
+    // Process any recurring transactions
+    ui.processRecurringTransactions();
     
     // Handle direct links to pages from URL hash
     if (window.location.hash) {
         const pageId = window.location.hash.substring(1);
         ui.changePage(pageId);
     }
+    
+    console.log("Application initialization completed");
 }); 
