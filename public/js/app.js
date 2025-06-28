@@ -4,6 +4,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // const auth = firebase.auth();
     // const db = firebase.firestore();
 
+    const PRESET_CATEGORIES = [
+        // Expenses
+        { name: 'Food & Drink', icon: 'fas fa-utensils', type: 'expense' },
+        { name: 'Shopping', icon: 'fas fa-shopping-bag', type: 'expense' },
+        { name: 'Housing', icon: 'fas fa-home', type: 'expense' },
+        { name: 'Transportation', icon: 'fas fa-car', type: 'expense' },
+        { name: 'Bills & Utilities', icon: 'fas fa-file-invoice-dollar', type: 'expense' },
+        { name: 'Entertainment', icon: 'fas fa-film', type: 'expense' },
+        { name: 'Health & Fitness', icon: 'fas fa-heartbeat', type: 'expense' },
+        { name: 'Travel', icon: 'fas fa-plane', type: 'expense' },
+        { name: 'Education', icon: 'fas fa-graduation-cap', type: 'expense' },
+        { name: 'Groceries', icon: 'fas fa-shopping-cart', type: 'expense' },
+        { name: 'Gifts', icon: 'fas fa-gift', type: 'expense' },
+        { name: 'Family', icon: 'fas fa-users', type: 'expense' },
+        { name: 'Personal Care', icon: 'fas fa-spa', type: 'expense' },
+        { name: 'Investments', icon: 'fas fa-chart-line', type: 'expense' },
+        { name: 'Other', icon: 'fas fa-receipt', type: 'expense' },
+        // Income
+        { name: 'Salary', icon: 'fas fa-briefcase', type: 'income' },
+        { name: 'Freelance', icon: 'fas fa-laptop-code', type: 'income' },
+        { name: 'Investment', icon: 'fas fa-piggy-bank', type: 'income' },
+        { name: 'Business', icon: 'fas fa-store', type: 'income' },
+        { name: 'Rental', icon: 'fas fa-key', type: 'income' },
+        { name: 'Other', icon: 'fas fa-dollar-sign', type: 'income' },
+    ];
+
     /**
      * Data management object for Firestore interactions.
      */
@@ -252,17 +278,29 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         /**
-         * Fetches all required data from Firestore.
+         * Fetches all data from Firestore and renders the UI.
          */
         async loadAllData() {
+            if (!this.user) return;
+            const userId = this.user.uid;
+
             const [accounts, categories, transactions] = await Promise.all([
-                dbManager.fetchCollection(this.user.uid, 'accounts'),
-                dbManager.fetchCollection(this.user.uid, 'categories'),
-                dbManager.fetchCollection(this.user.uid, 'transactions'),
+                dbManager.fetchCollection(userId, 'accounts'),
+                dbManager.fetchCollection(userId, 'categories'),
+                dbManager.fetchCollection(userId, 'transactions')
             ]);
+
             this.state.accounts = accounts;
             this.state.categories = categories;
             this.state.transactions = transactions;
+
+            // If no categories, add presets
+            if (this.state.categories.length === 0) {
+                await this.addPresetCategories();
+                // Refetch categories after adding them
+                this.state.categories = await dbManager.fetchCollection(userId, 'categories');
+            }
+
             this.renderAll();
         },
         
@@ -784,7 +822,29 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSpendingChart(transactions) {
             // TODO: Implementation of renderSpendingChart method
             if (!this.elements.spendingChart) return;
-        }
+        },
+
+        /**
+         * Adds preset categories for a new user.
+         */
+        async addPresetCategories() {
+            if (!this.user) return;
+            const userId = this.user.uid;
+
+            const categoryPromises = PRESET_CATEGORIES.map(category => {
+                const categoryId = db.collection('users').doc(userId).collection('categories').doc().id;
+                const newCategory = {
+                    id: categoryId,
+                    name: category.name,
+                    icon: category.icon,
+                    type: category.type
+                };
+                return dbManager.saveData(userId, 'categories', newCategory);
+            });
+
+            await Promise.all(categoryPromises);
+            this.showToast('Welcome! We have added some preset categories to get you started.', 'success');
+        },
     };
 
     // --- INITIALIZATION ---
@@ -792,10 +852,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             ui.initialize(user);
         } else {
-            // If no user is logged in, redirect to the landing page.
-            // Add a loading class to the body to prevent flash of content.
-            document.body.classList.add('loading');
-            window.location.href = 'index.html';
+            // Redirect to login if not authenticated
+            if (window.location.pathname !== '/login.html' && window.location.pathname !== '/register.html' && window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
+                window.location.href = 'login.html';
+            }
         }
     });
 
