@@ -803,8 +803,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            await dbManager.saveData(this.user.uid, 'transactions', newTx);
+            // Find the account to update
+            const accountToUpdate = this.state.accounts.find(acc => acc.id === newTx.account);
+            if (!accountToUpdate) {
+                this.showToast('Selected account not found.', 'error');
+                return;
+            }
+
+            // Update account balance
+            if (newTx.type === 'income') {
+                accountToUpdate.balance += newTx.amount;
+            } else {
+                accountToUpdate.balance -= newTx.amount;
+            }
+
+            // --- Database Operations ---
+            // Use a batch write to ensure both operations succeed or fail together
+            const batch = db.batch();
+            const userRef = db.collection('users').doc(this.user.uid);
+
+            // 1. Save the new transaction
+            const transactionRef = userRef.collection('transactions').doc(newTx.id);
+            batch.set(transactionRef, newTx);
+
+            // 2. Update the account balance
+            const accountRef = userRef.collection('accounts').doc(accountToUpdate.id);
+            batch.update(accountRef, { balance: accountToUpdate.balance });
             
+            await batch.commit();
+            
+            // --- UI Updates ---
             this.state.transactions.push(newTx);
             this.renderAll();
 
