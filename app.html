@@ -19,6 +19,11 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="public/css/style.css">
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
     <style>
         /* All styles are in external CSS file: public/css/style.css */
     </style>
@@ -89,7 +94,8 @@
                     
                     <div class="user-profile">
                         <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Profile">
-                        <div class="user-name">John Smith</div>
+                        <div class="user-name" id="user-name"></div>
+                        <button id="logout-btn" class="btn btn-secondary" style="display: none;">Logout</button>
                     </div>
                 </div>
             </header>
@@ -218,7 +224,7 @@
                         </div>
                         
                         <div class="btn-container">
-                            <button type="button" class="btn btn-secondary" onclick="window.location.href='#dashboard'">Cancel</button>
+                            <button type="button" class="btn btn-secondary" id="transaction-cancel-btn">Cancel</button>
                             <button type="submit" class="btn btn-primary">Save Transaction</button>
                         </div>
                     </form>
@@ -250,7 +256,10 @@
             <div class="page" id="accounts-page">
                 <div class="widget-header">
                     <h2 class="page-title">Manage Your Accounts</h2>
-                    <button class="btn btn-primary" id="transfer-money-btn"><i class="fas fa-exchange-alt"></i> Transfer Money</button>
+                    <div>
+                        <button class="btn btn-primary" id="transfer-money-btn"><i class="fas fa-exchange-alt"></i> Transfer Money</button>
+                        <button class="btn btn-primary" id="add-account-btn"><i class="fas fa-plus"></i> Add Account</button>
+                    </div>
                 </div>
                 <div class="accounts-grid" id="accounts-list">
                     <!-- Account cards will be added dynamically -->
@@ -259,7 +268,10 @@
             
             <!-- Categories Page -->
             <div class="page" id="categories-page">
-                <h2 class="page-title">Manage Your Categories</h2>
+                <div class="widget-header">
+                    <h2 class="page-title">Manage Your Categories</h2>
+                    <button class="btn btn-primary" id="add-category-btn"><i class="fas fa-plus"></i> Add Category</button>
+                </div>
                 <div class="category-list" id="categories-list">
                     <!-- Categories will be added dynamically -->
                 </div>
@@ -636,12 +648,8 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore-compat.js" onload="console.log('Firebase SDK loaded')"></script>
-
     <!-- Custom JS -->
+    <script src="public/js/firebase-config.js"></script>
     <script src="public/js/app.js"></script>
 </body>
 </html>

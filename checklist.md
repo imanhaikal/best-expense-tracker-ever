@@ -6,99 +6,99 @@
     - [x] Enable Firebase Authentication: Email/Password method.
     - [x] Enable Firebase Authentication: Google Sign-In method.
     - [x] Enable Firestore Database.
-- [ ] **HTML Files:**
-    - [ ] Create `login.html`.
-    - [ ] Create `register.html`.
-- [ ] **CSS & JS Files:**
-    - [ ] Create `public/css/auth.css` for styling.
-    - [ ] Create `public/js/auth.js` for logic.
-    - [ ] Create `public/js/firebase-config.js` to initialize Firebase.
-- [ ] **HTML Structure:**
-    - [ ] In `login.html` and `register.html`, add basic HTML boilerplate (`<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`).
-    - [ ] In `<head>`, link to a common stylesheet (`style.css`), the new `auth.css`, and Font Awesome.
-    - [ ] Before `</body>`, link to Firebase SDKs (`app`, `auth`, `firestore`).
-    - [ ] Link to `firebase-config.js` and `auth.js`.
+- [x] **HTML Files:**
+    - [x] Create `login.html`.
+    - [x] Create `register.html`.
+- [x] **CSS & JS Files:**
+    - [x] Create `public/css/auth.css` for styling.
+    - [x] Create `public/js/auth.js` for logic.
+    - [x] Create `public/js/firebase-config.js` to initialize Firebase.
+- [x] **HTML Structure:**
+    - [x] In `login.html` and `register.html`, add basic HTML boilerplate (`<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`).
+    - [x] In `<head>`, link to a common stylesheet (`style.css`), the new `auth.css`, and Font Awesome.
+    - [x] Before `</body>`, link to Firebase SDKs (`app`, `auth`, `firestore`).
+    - [x] Link to `firebase-config.js` and `auth.js`.
 
 ### 2. Registration Page (`register.html`)
-- [ ] **Form Structure:**
-    - [ ] Create a `<form>` element.
-    - [ ] Add an `<h1>` with the text "Create Your Account".
-    - [ ] Add an input field for `username` (`<input type="text">`).
-    - [ ] Add an input field for `email` (`<input type="email">`).
-    - [ ] Add an input field for `password` (`<input type="password">`).
-    - [ ] Add an input field for `confirm password` (`<input type="password">`).
-    - [ ] Add a "Register" `<button type="submit">`.
-    - [ ] Add a link to `login.html` for users who already have an account.
-    - [ ] Add a container element to display error messages.
-- [ ] **Registration Logic (`auth.js`):**
-    - [ ] Add a `DOMContentLoaded` listener.
-    - [ ] Get references to the form and input elements.
-    - [ ] Add a `submit` event listener to the form.
-    - [ ] Inside the listener, implement the `handleRegister` function.
-    - [ ] **Client-Side Validation:**
-        - [ ] Prevent default form submission.
-        - [ ] Check if any fields are empty.
-        - [ ] Check if passwords match.
-        - [ ] Display appropriate error messages in the error container.
-    - [ ] **Firebase Interaction:**
-        - [ ] If validation passes, call `firebase.auth().createUserWithEmailAndPassword()`.
-        - [ ] On success, get the `user` object.
-        - [ ] Call `user.updateProfile()` to set the `displayName` (username).
-        - [ ] Store additional user info (UID, email, username) in a `users` collection in Firestore.
-        - [ ] Redirect to `app.html` upon successful registration.
-    - [ ] **Error Handling:**
-        - [ ] `catch` any errors from Firebase (e.g., `auth/email-already-in-use`).
-        - [ ] Display user-friendly error messages.
+- [x] **Form Structure:**
+    - [x] Create a `<form>` element.
+    - [x] Add an `<h1>` with the text "Create Your Account".
+    - [x] Add an input field for `username` (`<input type="text">`).
+    - [x] Add an input field for `email` (`<input type="email">`).
+    - [x] Add an input field for `password` (`<input type="password">`).
+    - [x] Add an input field for `confirm password` (`<input type="password">`).
+    - [x] Add a "Register" `<button type="submit">`.
+    - [x] Add a link to `login.html` for users who already have an account.
+    - [x] Add a container element to display error messages.
+- [x] **Registration Logic (`auth.js`):**
+    - [x] Add a `DOMContentLoaded` listener.
+    - [x] Get references to the form and input elements.
+    - [x] Add a `submit` event listener to the form.
+    - [x] Inside the listener, implement the `handleRegister` function.
+    - [x] **Client-Side Validation:**
+        - [x] Prevent default form submission.
+        - [x] Check if any fields are empty.
+        - [x] Check if passwords match.
+        - [x] Display appropriate error messages in the error container.
+    - [x] **Firebase Interaction:**
+        - [x] If validation passes, call `firebase.auth().createUserWithEmailAndPassword()`.
+        - [x] On success, get the `user` object.
+        - [x] Call `user.updateProfile()` to set the `displayName` (username).
+        - [x] Store additional user info (UID, email, username) in a `users` collection in Firestore.
+        - [x] Redirect to `app.html` upon successful registration.
+    - [x] **Error Handling:**
+        - [x] `catch` any errors from Firebase (e.g., `auth/email-already-in-use`).
+        - [x] Display user-friendly error messages.
 
 ### 3. Login Page (`login.html`)
-- [ ] **Form Structure:**
-    - [ ] Create a `<form>` element.
-    - [ ] Add an `<h1>` with the text "Login to Your Account".
-    - [ ] Add an input field for `email` (`<input type="email">`).
-    - [ ] Add an input field for `password` (`<input type="password">`).
-    - [ ] Add a "Login" `<button type="submit">`.
-    - [ ] Add a link to `register.html` for new users.
-    - [ ] Add a "Sign in with Google" button.
-    - [ ] Add a container element to display error messages.
-- [ ] **Login Logic (`auth.js`):**
-    - [ ] Add a `DOMContentLoaded` listener (if not already handled for both pages).
-    - [ ] Get references to the form, inputs, and Google sign-in button.
-    - [ ] Add a `submit` event listener for email/password login.
-    - [ ] Inside the listener, implement the `handleLogin` function.
-    - [ ] **Firebase Interaction (Email/Password):**
-        - [ ] Call `firebase.auth().signInWithEmailAndPassword()`.
-        - [ ] On success, redirect to `app.html`.
-        - [ ] `catch` and display errors (e.g., `auth/user-not-found`, `auth/wrong-password`).
-    - [ ] Add a `click` event listener for the Google sign-in button.
-    - [ ] Inside the listener, implement the `handleGoogleSignIn` function.
-    - [ ] **Firebase Interaction (Google):**
-        - [ ] Create a new `GoogleAuthProvider`.
-        - [ ] Call `firebase.auth().signInWithPopup()`.
-        - [ ] On success, check if the user is new (`additionalUserInfo.isNewUser`).
-        - [ ] If new, save their info to the `users` collection in Firestore.
-        - [ ] Redirect to `app.html`.
-        - [ ] `catch` and display any sign-in errors.
+- [x] **Form Structure:**
+    - [x] Create a `<form>` element.
+    - [x] Add an `<h1>` with the text "Login to Your Account".
+    - [x] Add an input field for `email` (`<input type="email">`).
+    - [x] Add an input field for `password` (`<input type="password">`).
+    - [x] Add a "Login" `<button type="submit">`.
+    - [x] Add a link to `register.html` for new users.
+    - [x] Add a "Sign in with Google" button.
+    - [x] Add a container element to display error messages.
+- [x] **Login Logic (`auth.js`):**
+    - [x] Add a `DOMContentLoaded` listener (if not already handled for both pages).
+    - [x] Get references to the form, inputs, and Google sign-in button.
+    - [x] Add a `submit` event listener for email/password login.
+    - [x] Inside the listener, implement the `handleLogin` function.
+    - [x] **Firebase Interaction (Email/Password):**
+        - [x] Call `firebase.auth().signInWithEmailAndPassword()`.
+        - [x] On success, redirect to `app.html`.
+        - [x] `catch` and display errors (e.g., `auth/user-not-found`, `auth/wrong-password`).
+    - [x] Add a `click` event listener for the Google sign-in button.
+    - [x] Inside the listener, implement the `handleGoogleSignIn` function.
+    - [x] **Firebase Interaction (Google):**
+        - [x] Create a new `GoogleAuthProvider`.
+        - [x] Call `firebase.auth().signInWithPopup()`.
+        - [x] On success, check if the user is new (`additionalUserInfo.isNewUser`).
+        - [x] If new, save their info to the `users` collection in Firestore.
+        - [x] Redirect to `app.html`.
+        - [x] `catch` and display any sign-in errors.
 
 ### 4. Application Integration & State Management (`app.js`)
-- [ ] **Authentication State Observer:**
-    - [ ] Implement the `firebase.auth().onAuthStateChanged` listener to run when the app loads.
-    - [ ] **If `user` exists (Logged In):**
-        - [ ] Fetch the user's data from Firestore.
-        - [ ] Update the UI to show user-specific content (e.g., "Welcome, [Username]!").
-        - [ ] Show the "Logout" button and hide login/signup links.
-        - [ ] Initialize the main application features (load transactions, render charts, etc.).
-    - [ ] **If `user` is `null` (Logged Out):**
-        - [ ] Redirect the user to `login.html` using `window.location.replace()`.
-- [ ] **Logout Functionality:**
-    - [ ] In `app.html`, add a "Logout" button with a unique ID.
-    - [ ] In `app.js`, get a reference to the logout button.
-    - [ ] Add a `click` event listener to it.
-    - [ ] Inside the listener, call `firebase.auth().signOut()`.
-    - [ ] On success, the `onAuthStateChanged` observer will handle the redirection.
-- [ ] **Data Security:**
-    - [ ] Update all Firestore service functions to be user-aware.
-        - [ ] Example: `addTransaction(userId, transactionData)`.
-        - [ ] All queries must be filtered by the current user's UID.
-    - [ ] **Firestore Security Rules:**
-        - [ ] Write rules to ensure users can only read/write their own data.
-        - [ ] Example rule: `allow read, write: if request.auth.uid == resource.data.userId;`.
+- [x] **Authentication State Observer:**
+    - [x] Implement the `firebase.auth().onAuthStateChanged` listener to run when the app loads.
+    - [x] **If `user` exists (Logged In):**
+        - [x] Fetch the user's data from Firestore.
+        - [x] Update the UI to show user-specific content (e.g., "Welcome, [Username]!").
+        - [x] Show the "Logout" button and hide login/signup links.
+        - [x] Initialize the main application features (load transactions, render charts, etc.).
+    - [x] **If `user` is `null` (Logged Out):**
+        - [x] Redirect the user to `login.html` using `window.location.replace()`.
+- [x] **Logout Functionality:**
+    - [x] In `app.html`, add a "Logout" button with a unique ID.
+    - [x] In `app.js`, get a reference to the logout button.
+    - [x] Add a `click` event listener to it.
+    - [x] Inside the listener, call `firebase.auth().signOut()`.
+    - [x] On success, the `onAuthStateChanged` observer will handle the redirection.
+- [x] **Data Security:**
+    - [x] Update all Firestore service functions to be user-aware.
+        - [x] Example: `addTransaction(userId, transactionData)`.
+        - [x] All queries must be filtered by the current user's UID.
+    - [x] **Firestore Security Rules:**
+        - [x] Write rules to ensure users can only read/write their own data.
+        - [x] Example rule: `allow read, write: if request.auth.uid == resource.data.userId;`.
