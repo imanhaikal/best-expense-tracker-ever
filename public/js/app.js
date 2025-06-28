@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const snapshot = await db.collection('users').doc(userId).collection(collectionName).get();
                 return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-} catch (error) {
+            } catch (error) {
                 console.error(`Error fetching ${collectionName}:`, error);
                 ui.showToast(`Failed to load ${collectionName}.`, 'error');
                 return [];
@@ -67,8 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ui = {
         user: null,
         state: {
-    accounts: [],
-    categories: [],
+            accounts: [],
+            categories: [],
             transactions: [],
         },
         elements: {},
@@ -83,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.setupEventListeners();
             this.renderUserInfo();
             await this.loadAllData();
-            this.renderAll();
             document.body.classList.remove('loading');
         },
 
@@ -108,11 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Categories
                 categoryList: document.getElementById('categories-list'),
                 addCategoryBtn: document.getElementById('add-category-btn'),
-        categoryModalBackdrop: document.getElementById('category-modal-backdrop'),
-        categoryForm: document.getElementById('category-form'),
+                categoryModalBackdrop: document.getElementById('category-modal-backdrop'),
+                categoryForm: document.getElementById('category-form'),
 
                 // Transactions
-                addTransactionBtn: document.getElementById('add-transaction-btn'), // This might be a modal trigger
+                addTransactionBtn: document.getElementById('add-transaction-btn'),
                 transactionForm: document.getElementById('transaction-form'),
                 transactionCancelBtn: document.getElementById('transaction-cancel-btn'),
                 allTransactionsList: document.getElementById('all-transactions'),
@@ -122,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 monthlyIncome: document.getElementById('monthly-income'),
                 monthlyExpenses: document.getElementById('monthly-expenses'),
                 spendingChart: document.getElementById('spending-chart'),
+                totalBalanceTrend: document.getElementById('total-balance-trend'),
+                totalBalanceTrendPercentage: document.getElementById('total-balance-trend-percentage'),
+                monthlyIncomeTrend: document.getElementById('monthly-income-trend'),
+                monthlyIncomeTrendPercentage: document.getElementById('monthly-income-trend-percentage'),
+                monthlyExpensesTrend: document.getElementById('monthly-expenses-trend'),
+                monthlyExpensesTrendPercentage: document.getElementById('monthly-expenses-trend-percentage'),
                 
                 // Modal elements
                 transferMoneyBtn: document.getElementById('transfer-money-btn'),
@@ -149,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         /**
          * Sets up all global event listeners.
          */
-    setupEventListeners() {
+        setupEventListeners() {
             // Global
             this.elements.logoutBtn.addEventListener('click', () => auth.signOut());
             const themeHandler = () => {
@@ -186,12 +191,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('transactions-page').classList.add('active');
                 document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
                 document.querySelector('a[href="#transactions"]').classList.add('active');
+                document.getElementById('page-title').textContent = 'New Transaction';
+                this.populateTransactionFormDropdowns();
             });
             
             this.elements.transactionForm?.addEventListener('submit', (e) => {
                 e.preventDefault();
-                // Handle transaction form submission
-                // Implementation to be added
+                this.handleTransactionSubmit();
+            });
+
+            this.elements.transactionForm?.elements['transaction-type'].addEventListener('change', () => {
+                this.populateTransactionFormDropdowns();
             });
             
             // Add cancel button handler for transaction form
@@ -248,11 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const [accounts, categories, transactions] = await Promise.all([
                 dbManager.fetchCollection(this.user.uid, 'accounts'),
                 dbManager.fetchCollection(this.user.uid, 'categories'),
-                dbManager.fetchCollection(this.user.uid, 'transactions')
+                dbManager.fetchCollection(this.user.uid, 'transactions'),
             ]);
             this.state.accounts = accounts;
             this.state.categories = categories;
             this.state.transactions = transactions;
+            this.renderAll();
         },
         
         /**
@@ -261,7 +272,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll() {
             this.renderAccountList();
             this.renderCategoryList();
-            // this.renderTransactionList();
+            this.renderTransactionList();
+            this.populateTransactionFormDropdowns();
             this.updateDashboardWidgets();
         },
 
@@ -312,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         
         // --- RENDER FUNCTIONS ---
-    renderAccountList() {
+        renderAccountList() {
             const list = this.elements.accountList;
             if (!list) return;
             list.innerHTML = '';
@@ -339,53 +351,230 @@ document.addEventListener('DOMContentLoaded', () => {
                 fragment.appendChild(card);
             });
             list.appendChild(fragment);
-    },
-    
-    renderCategoryList() {
-            const list = this.elements.categoryList;
-            if (!list) return;
-            list.innerHTML = '';
+        },
+        
+        renderCategoryList() {
+            if (!this.elements.categoryList) return;
             const fragment = document.createDocumentFragment();
-            if (this.state.categories.length === 0) {
-                list.innerHTML = '<div class="list-item-empty">No categories yet.</div>';
-            return;
-        }
-            this.state.categories.forEach(cat => {
-                const el = document.createElement('div');
-                el.className = 'category-item';
-                el.dataset.id = cat.id;
-                el.innerHTML = `
-                    <div class="category-info">
-                        <i class="fas ${cat.icon}" style="color: ${cat.color};"></i>
-                        <span>${cat.name}</span>
-                        </div>
-                    <div class="list-item-actions">
-                        <button class="btn-icon btn-edit" data-action="edit"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="btn-icon btn-delete" data-action="delete"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                `;
-                fragment.appendChild(el);
+            this.elements.categoryList.innerHTML = '';
+            ['expense', 'income'].forEach(type => {
+                const header = document.createElement('div');
+                header.className = 'category-list-header';
+                header.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Categories`;
+                fragment.appendChild(header);
+
+                const filteredCategories = this.state.categories.filter(c => c.type === type);
+                if (filteredCategories.length === 0) {
+                    const noCategories = document.createElement('div');
+                    noCategories.className = 'category-item-empty';
+                    noCategories.textContent = `No ${type} categories defined.`;
+                    fragment.appendChild(noCategories);
+                } else {
+                    filteredCategories.forEach(cat => {
+                        const item = document.createElement('div');
+                        item.className = 'category-item';
+                        item.dataset.id = cat.id;
+                        item.innerHTML = `
+                            <div class="category-info">
+                                <i class="${cat.icon}" style="color: ${cat.color};"></i>
+                                <span>${cat.name}</span>
+                            </div>
+                            <div class="category-actions">
+                                <button class="btn-icon edit-category-btn" data-action="edit"><i class="fas fa-pencil-alt"></i></button>
+                                <button class="btn-icon delete-category-btn" data-action="delete"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        `;
+                        fragment.appendChild(item);
+                    });
+                }
             });
-            list.appendChild(fragment);
+            this.elements.categoryList.appendChild(fragment);
+        },
+
+        renderTransactionList() {
+            if (!this.elements.allTransactionsList) return;
+
+            const fragment = document.createDocumentFragment();
+            this.elements.allTransactionsList.innerHTML = '';
+
+            if (this.state.transactions.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="5" class="empty-state">No transactions yet. Add one to get started!</td>`;
+                fragment.appendChild(row);
+            } else {
+                this.state.transactions
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .forEach(tx => {
+                        const category = this.state.categories.find(c => c.id === tx.category) || {};
+                        const account = this.state.accounts.find(a => a.id === tx.account) || {};
+                        const row = document.createElement('tr');
+                        row.dataset.id = tx.id;
+                        row.innerHTML = `
+                            <td>
+                                <div class="transaction-payee">
+                                    <i class="fas ${category.icon || 'fa-question-circle'}" style="color:${category.color || '#ccc'}"></i>
+                                    <span>${tx.payee}</span>
+                                </div>
+                            </td>
+                            <td>${new Date(tx.date).toLocaleDateString()}</td>
+                            <td>${category.name || 'Uncategorized'}</td>
+                            <td>${account.name || 'N/A'}</td>
+                            <td class="${tx.type}">${this.formatCurrency(tx.amount)}</td>
+                        `;
+                        fragment.appendChild(row);
+                    });
+            }
+            
+            this.elements.allTransactionsList.appendChild(fragment);
+        },
+
+        populateTransactionFormDropdowns() {
+            const form = this.elements.transactionForm;
+            if (!form) return;
+            
+            const categorySelect = form.elements['transaction-category'];
+            const accountSelect = form.elements['transaction-account'];
+            const typeSelect = form.elements['transaction-type'];
+
+            const selectedType = typeSelect.value;
+
+            if (categorySelect) {
+                const currentCategory = categorySelect.value;
+                categorySelect.innerHTML = '<option value="">Select Category</option>';
+                this.state.categories
+                    .filter(c => c.type === selectedType)
+                    .forEach(cat => {
+                        const option = new Option(cat.name, cat.id);
+                        categorySelect.add(option);
+                    });
+                // Try to preserve selection if category is still valid for the new type
+                if (this.state.categories.some(c => c.id === currentCategory && c.type === selectedType)) {
+                    categorySelect.value = currentCategory;
+                }
+            }
+
+            if (accountSelect) {
+                const currentAccount = accountSelect.value;
+                accountSelect.innerHTML = '<option value="">Select Account</option>';
+                this.state.accounts.forEach(acc => {
+                    const option = new Option(acc.name, acc.id);
+                    accountSelect.add(option);
+                });
+                accountSelect.value = currentAccount;
+            }
         },
 
         updateDashboardWidgets() {
-            let totalBalance = 0;
-            this.state.accounts.forEach(acc => {
-                // Assuming credit card balances are negative
-                if (acc.type === 'credit') {
-                    totalBalance -= acc.balance;
-                } else {
-                    totalBalance += acc.balance;
-                }
+            console.log("updateDashboardWidgets called");
+            console.log("Current transactions:", this.state.transactions);
+            
+            const now = new Date();
+            const currentMonth = now.getUTCMonth();
+            const currentYear = now.getUTCFullYear();
+            console.log("Current month/year:", currentMonth, currentYear);
+            
+            // Calculate totals for the current month
+            const monthlyTransactions = this.state.transactions.filter(t => {
+                const transactionDate = new Date(`${t.date}T12:00:00Z`); // Assume noon UTC to avoid timezone shifts
+                return transactionDate.getUTCMonth() === currentMonth && transactionDate.getUTCFullYear() === currentYear;
             });
+            console.log("Current month transactions:", monthlyTransactions);
+            
+            const monthlyIncome = monthlyTransactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const monthlyExpenses = monthlyTransactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            console.log("Current month income/expenses:", monthlyIncome, monthlyExpenses);
+
+            // Calculate totals for the previous month
+            const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const previousMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            console.log("Previous month/year:", previousMonth, previousMonthYear);
+
+            const previousMonthTransactions = this.state.transactions.filter(t => {
+                const transactionDate = new Date(`${t.date}T12:00:00Z`); // Assume noon UTC
+                return transactionDate.getUTCMonth() === previousMonth && transactionDate.getUTCFullYear() === previousMonthYear;
+            });
+            console.log("Previous month transactions:", previousMonthTransactions);
+
+            const previousMonthIncome = previousMonthTransactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            const previousMonthExpenses = previousMonthTransactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+                
+            console.log("Previous month income/expenses:", previousMonthIncome, previousMonthExpenses);
+
+            // Calculate Total Balance and its trend
+            const totalBalance = this.state.accounts.reduce((sum, acc) => sum + acc.balance, 0);
+            const netChangeCurrentMonth = monthlyIncome - monthlyExpenses;
+            const balanceAtStartOfMonth = totalBalance - netChangeCurrentMonth;
+            console.log("Total balance, net change, balance at start:", totalBalance, netChangeCurrentMonth, balanceAtStartOfMonth);
+
+            // Update DOM
             this.elements.totalBalance.textContent = this.formatCurrency(totalBalance);
-            // More widget logic to come...
+            this.elements.monthlyIncome.textContent = this.formatCurrency(monthlyIncome);
+            this.elements.monthlyExpenses.textContent = this.formatCurrency(monthlyExpenses);
+
+            // Update Trends
+            const incomeTrend = calculateTrend(monthlyIncome, previousMonthIncome);
+            console.log("Income trend:", incomeTrend);
+            this.updateTrendElement(this.elements.monthlyIncomeTrend, this.elements.monthlyIncomeTrendPercentage, incomeTrend);
+            
+            const expenseTrend = calculateTrend(monthlyExpenses, previousMonthExpenses);
+            console.log("Expense trend:", expenseTrend);
+            this.updateTrendElement(this.elements.monthlyExpensesTrend, this.elements.monthlyExpensesTrendPercentage, expenseTrend, true);
+
+            const balanceTrend = calculateTrend(totalBalance, balanceAtStartOfMonth);
+            console.log("Balance trend:", balanceTrend);
+            this.updateTrendElement(this.elements.totalBalanceTrend, this.elements.totalBalanceTrendPercentage, balanceTrend);
+
+            this.renderSpendingChart(monthlyTransactions);
         },
 
-        // --- MODAL & FORM HANDLERS ---
-        
-        // Account Handlers
+        /**
+         * Updates a trend indicator element.
+         * @param {HTMLElement} trendElement - The container for the trend icon and text.
+         * @param {HTMLElement} percentageElement - The element that displays the percentage.
+         * @param {object} trendData - The trend data from calculateTrend.
+         * @param {boolean} isExpense - Flag to invert positive/negative color for expenses.
+         */
+        updateTrendElement(trendElement, percentageElement, trendData, isExpense = false) {
+            console.log("updateTrendElement called with:", trendElement?.id, percentageElement?.id, trendData, isExpense);
+            
+            if (!trendElement || !percentageElement) {
+                console.error("Missing trend elements:", trendElement, percentageElement);
+                return;
+            }
+
+            const { percentage, direction, isPositive } = trendData;
+            
+            // Determine visual representation (color)
+            let visualIsPositive = isPositive;
+            if (isExpense) {
+                visualIsPositive = !isPositive; // Increase in expense is negative visually
+            }
+
+            trendElement.classList.remove('positive', 'negative');
+            trendElement.classList.add(visualIsPositive ? 'positive' : 'negative');
+            
+            const icon = trendElement.querySelector('i');
+            if (icon) {
+                icon.className = `fas fa-arrow-${direction}`;
+            } else {
+                console.error("Icon element not found in:", trendElement);
+            }
+
+            percentageElement.textContent = `${percentage} from last month`;
+            console.log("Updated trend element:", trendElement.className, percentageElement.textContent);
+        },
+
         showAccountModal(accountId = null) {
             this.elements.accountModalBackdrop.classList.add('active');
             const form = this.elements.accountForm;
@@ -396,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (accountId) {
                 modalTitle.textContent = 'Edit Account';
                 const account = this.state.accounts.find(a => a.id === accountId);
-        if (account) {
+                if (account) {
                     form.querySelector('#account-id').value = account.id;
                     form.querySelector('#account-name').value = account.name;
                     form.querySelector('#account-type').value = account.type;
@@ -436,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await dbManager.saveData(this.user.uid, 'accounts', accountData);
             this.renderAccountList();
             this.updateDashboardWidgets();
-        this.hideAccountModal();
+            this.hideAccountModal();
             this.showToast(id ? 'Account updated!' : 'Account created!', 'success');
         },
         async deleteAccount(accountId) {
@@ -481,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hideCategoryModal() { this.elements.categoryModalBackdrop.classList.remove('active'); },
         async handleCategorySubmit() {
             const form = this.elements.categoryForm;
-        const id = form.querySelector('#category-id').value;
+            const id = form.querySelector('#category-id').value;
             const categoryData = {
                 id: id || 'cat_' + Date.now(),
                 name: form.querySelector('#category-name').value.trim(),
@@ -493,10 +682,10 @@ document.addEventListener('DOMContentLoaded', () => {
                  return this.showToast('Category name is required.', 'error');
             }
 
-        if (id) {
+            if (id) {
                 const existing = this.state.categories.find(c => c.id === id);
                 Object.assign(existing, categoryData);
-        } else {
+            } else {
                 this.state.categories.push(categoryData);
             }
 
@@ -555,6 +744,46 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         hideRecurringModal() {
             this.elements.recurringModalBackdrop.classList.remove('active');
+        },
+
+        async handleTransactionSubmit() {
+            const form = this.elements.transactionForm;
+            const newTx = {
+                id: `txn_${new Date().getTime()}`,
+                type: form.elements['transaction-type'].value,
+                amount: parseFloat(form.elements['transaction-amount'].value),
+                date: form.elements['transaction-date'].value,
+                payee: form.elements['transaction-payee'].value.trim(),
+                category: form.elements['transaction-category'].value,
+                account: form.elements['transaction-account'].value,
+                notes: form.elements['transaction-notes'].value.trim(),
+                userId: this.user.uid,
+            };
+
+            if (!newTx.amount || !newTx.date || !newTx.payee || !newTx.category || !newTx.account) {
+                this.showToast('Please fill out all required fields.', 'error');
+                return;
+            }
+
+            await dbManager.saveData(this.user.uid, 'transactions', newTx);
+            
+            this.state.transactions.push(newTx);
+            this.renderAll();
+
+            form.reset();
+            this.showToast('Transaction added successfully!', 'success');
+
+            // Navigate back to dashboard after submission
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById('dashboard-page').classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelector('a[href="#dashboard"]').classList.add('active');
+            document.getElementById('page-title').textContent = 'Dashboard';
+        },
+
+        renderSpendingChart(transactions) {
+            // TODO: Implementation of renderSpendingChart method
+            if (!this.elements.spendingChart) return;
         }
     };
 
@@ -569,6 +798,39 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'index.html';
         }
     });
+
+    /**
+     * Calculates the percentage trend between two values.
+     * @param {number} currentValue The value for the current period.
+     * @param {number} previousValue The value for the previous period.
+     * @returns {{percentage: string, direction: string, isPositive: boolean}}
+     */
+    const calculateTrend = (currentValue, previousValue) => {
+        console.log("calculateTrend called with:", currentValue, previousValue);
+        
+        if (previousValue === 0) {
+            if (currentValue > 0) return { percentage: '+100.0%', direction: 'up', isPositive: true };
+            if (currentValue < 0) return { percentage: '-100.0%', direction: 'down', isPositive: false };
+            return { percentage: '0.0%', direction: 'up', isPositive: true };
+        }
+
+        const percentageChange = ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
+        
+        // Avoid -0.0%
+        if (Math.abs(percentageChange) < 0.01) {
+             return { percentage: '0.0%', direction: 'up', isPositive: true };
+        }
+
+        const isPositive = percentageChange >= 0;
+        const result = {
+            percentage: `${isPositive ? '+' : ''}${percentageChange.toFixed(1)}%`,
+            direction: isPositive ? 'up' : 'down',
+            isPositive: isPositive,
+        };
+        
+        console.log("calculateTrend result:", result);
+        return result;
+    };
 
     // Set initial theme from localStorage
     const savedTheme = localStorage.getItem('theme') || 'dark';
