@@ -709,7 +709,42 @@ tr:hover {
 .account-actions {
     margin-top: 15px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Button Icon Styles */
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    color: var(--text-muted-color);
+}
+
+.btn-icon:hover {
+    background-color: rgba(106, 99, 227, 0.1);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.btn-icon.btn-edit:hover {
+    color: var(--primary-color);
+}
+
+.btn-icon.btn-delete:hover {
+    color: var(--danger-color);
+    background-color: rgba(255, 107, 107, 0.1);
+}
+
+.btn-icon i {
+    font-size: 1rem;
 }
 
 /* Category Management */
