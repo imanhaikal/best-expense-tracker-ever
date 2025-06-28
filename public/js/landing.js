@@ -8,11 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof firebase !== 'undefined') {
         firebase.auth().onAuthStateChanged(user => {
             if (user) {
-                // User is logged in, point to the app
-                navGoToAppBtn.href = 'app.html';
-                heroGetStartedBtn.href = 'app.html';
+                // User is logged in, redirect to the app
+                window.location.href = 'app.html';
             } else {
-                // User is not logged in, point to the login page
+                // User is not logged in, update links to point to the login/register page
                 navGoToAppBtn.href = 'login.html';
                 navGoToAppBtn.textContent = 'Login';
                 heroGetStartedBtn.href = 'register.html';

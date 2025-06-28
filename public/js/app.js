@@ -563,10 +563,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             ui.initialize(user);
         } else {
-            // If no user is logged in, redirect to the login page.
+            // If no user is logged in, redirect to the landing page.
             // Add a loading class to the body to prevent flash of content.
             document.body.classList.add('loading');
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
     });
 
